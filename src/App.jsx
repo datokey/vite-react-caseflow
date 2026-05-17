@@ -1,5 +1,4 @@
 import Navbar from './components/Navbar';
-import FeaturedArticle from './components/FeaturedArticle';
 import ArticleCard from './components/ArticleCard';
 import Footer from './components/Footer';
 
