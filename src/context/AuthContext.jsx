@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const checkAuthStatus = async () => {
             try {
-                const response = await fetch(`${process.env.AUTH_URI}`, {
+                const response = await fetch(`${process.env.AUTH_URI}/me`, {
                     method: 'GET',
                    // mengirimkan Httponly cookie secara otomatis ke backend
                     credentials: 'include',
