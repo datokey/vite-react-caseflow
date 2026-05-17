@@ -11,7 +11,7 @@ const ArticleCard = ({ title, category, date, excerpt, content, image, onEdit, o
     e.stopPropagation();
     if (onCopy) onCopy();
     // Menyalin seluruh konten penuh ke clipboard
-    navigator.clipboard.writeText(`${title}\n\n${content || excerpt}`).
+    navigator.clipboard.writeText(`${content || excerpt}`).
       then(() => {
         setIsCopied(true) // Tampilkan feedback "Teks Disalin!" pada tombol
         // Kembalikan tombol ke tulisan "Salin" setelah 2 detik

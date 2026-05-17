@@ -8,37 +8,25 @@ function App() {
       <Navbar />
       
       <main className="max-w-6xl mx-auto px-4 py-10">
-        {/* Section Unggulan */}
-        {/* <FeaturedArticle /> */}
-
+       {/* Section search bar artikel */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+          <input 
+            type="text" 
+            placeholder="Cari artikel..." 
+            className="w-full flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+          />
+          <button className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors">
+            Cari
+          </button>
+        </div>
         {/* Section Daftar Artikel */}
-        <div className="mt-16">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-slate-900">Artikel Terbaru</h2>
-            <button className="text-indigo-600 font-semibold text-sm hover:underline">Lihat Semua</button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+        <div className="mt-16"> 
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 justify-items-center">
             <ArticleCard 
               title="Belajar Tailwind CSS dalam 10 Menit" 
               category="Desain"
               date="Mei 14, 2024"
-              excerpt="Contrary to popular belief, Lorem Ipsum is not simply random text. 
-              It has roots in a piece of classical Latin literature from 45 BC, making it over 
-              2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College
-               in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, 
-               discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of 
-               de Finibus Bonorum et MalorumThis book is a
-                treatise on the theory of ethics, very popular during the
-                 Renaissance. The first line of Lorem Ipsum, 
-                Lorem ipsum dolor siomes from a line in 
-                Contrary to popular belief, Lorem Ipsum is not simply random text. 
-              It has roots in a piece of classical Latin literature from 45 BC, making it over 
-              2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College
-               in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, 
-               discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of 
-               de Finibus Bonorum et MalorumThis book is a
-                treatise on the theory of ethics, very popular during the
+              excerpt="very popular during the
                  Renaissance. The first line of Lorem Ipsum, 
                 Lorem ipsum dolor siomes from a line in 
                 "

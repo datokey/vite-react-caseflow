@@ -6,12 +6,12 @@ const Navbar = () => {
           Nulis<span className="text-slate-800">Kode</span>
         </div>
         <div className="hidden md:flex space-x-8 text-sm font-medium text-slate-600">
-          <a href="#" className="hover:text-indigo-600 transition">Beranda</a>
+          <a href="#" className="hover:text-indigo-600 transition">Link Penting</a>
           <a href="#" className="hover:text-indigo-600 transition">Kategori</a>
-          <a href="#" className="hover:text-indigo-600 transition">Tentang</a>
+          <a href="#" className="hover:text-indigo-600 transition">Update</a>
         </div>
         <button className="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-indigo-700 transition">
-          Berlangganan
+          Login
         </button>
       </div>
     </nav>
