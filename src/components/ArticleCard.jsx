@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const ArticleCard = ({ title, category, date, excerpt, content, image, onEdit, onCopy }) => {
+const ArticleCard = ({ title, date, excerpt, content, onEdit, onCopy }) => {
   // State untuk mengontrol apakah modal detail sedang terbuka atau tidak
   const [isOpen, setIsOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
