@@ -1,24 +1,30 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
+import { useNavigate } from "react-router-dom";
+
 import Login from "./Login.jsx";
 
 const NAV_LINKS = [
   { label: "Link Penting", href: "#" },
   { label: "Kategori", href: "#" },
-  { label: "Update", href: "#" },
+  { label: "Update", href: "#" }, 
 ];
 
 const getDisplayName = (user) => user?.username || user?.name || user?.email || "Pengguna";
 
 const Navbar = () => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const cekMe = () => {
+    navigate('/cek-me');
+  };
   const { loading, user, logout } = useAuth();
   const { showToast } = useToast();
-  const profileButtonRef = useRef(null);
-  const profileDropdownRef = useRef(null);
+  const profileMenuRef = useRef(null);
 
   const closeMenu = () => setIsOpen(false);
   const closeProfileMenu = () => setIsProfileOpen(false);
@@ -44,13 +50,7 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        isProfileOpen &&
-        profileDropdownRef.current &&
-        profileButtonRef.current &&
-        !profileDropdownRef.current.contains(event.target) &&
-        !profileButtonRef.current.contains(event.target)
-      ) {
+      if (isProfileOpen && profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
         setIsProfileOpen(false);
       }
     };
@@ -82,14 +82,14 @@ const Navbar = () => {
               </a>
             ))}
           </div>
-
+           
           <div className="flex items-center gap-3">
             {user ? (
-              <div className="relative">
+              <div className="relative" ref={profileMenuRef}>
                 <button
                   type="button"
-                  ref={profileButtonRef}
                   aria-label="Buka menu akun"
+                  aria-haspopup="menu"
                   aria-expanded={isProfileOpen}
                   onClick={() => setIsProfileOpen((prev) => !prev)}
                   className="hidden md:inline-flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-white shadow-sm transition hover:bg-indigo-700"
@@ -102,8 +102,8 @@ const Navbar = () => {
 
                 <button
                   type="button"
-                  ref={profileButtonRef}
                   aria-label="Buka menu akun"
+                  aria-haspopup="menu"
                   aria-expanded={isProfileOpen}
                   onClick={() => setIsProfileOpen((prev) => !prev)}
                   className="md:hidden inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition"
@@ -116,7 +116,7 @@ const Navbar = () => {
 
                 {isProfileOpen && (
                   <div
-                    ref={profileDropdownRef}
+                    role="menu"
                     className="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl ring-1 ring-slate-200"
                   >
                     <div className="border-b border-slate-100 px-4 py-3 text-sm text-slate-700">
@@ -124,6 +124,7 @@ const Navbar = () => {
                     </div>
                     <button
                       type="button"
+                      role="menuitem"
                       onClick={handleProfileClick}
                       className="w-full px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50 transition"
                     >
@@ -131,6 +132,7 @@ const Navbar = () => {
                     </button>
                     <button
                       type="button"
+                      role="menuitem"
                       onClick={handleLogout}
                       className="w-full px-4 py-3 text-left text-sm font-semibold text-rose-600 hover:bg-rose-50 transition"
                     >

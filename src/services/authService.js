@@ -10,7 +10,9 @@ const getUserFromResponse = (data) => data?.user || data?.data?.user || data?.da
 
 export const authService = {
   async getCurrentUser() {
-    const data = await apiRequest(AUTH_ENDPOINTS.me);
+    const data = await apiRequest(AUTH_ENDPOINTS.me,{
+      credentials:"include",
+    });
     return getUserFromResponse(data);
   },
 
