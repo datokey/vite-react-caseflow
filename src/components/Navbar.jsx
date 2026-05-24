@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useToast } from "../context/ToastContext.jsx";
 import Login from "./Login.jsx";
 
 const NAV_LINKS = [
@@ -8,49 +9,55 @@ const NAV_LINKS = [
   { label: "Update", href: "#" },
 ];
 
-const AuthAction = ({ user, onLogin, onLogout, className = "" }) => {
-  if (user) {
-    return (
-      <div className={`flex items-center gap-4 ${className}`}>
-        <span className="text-sm text-slate-600 font-medium">
-          Halo, <b className="text-slate-800">{user.username}</b>
-        </span>
-        <button
-          onClick={onLogout}
-          className="bg-rose-50 text-rose-600 hover:bg-rose-100 text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
-        >
-          Keluar
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <button
-      onClick={onLogin}
-      className={`bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors shadow-xs ${className}`}
-    >
-      Masuk
-    </button>
-  );
-};
+const getDisplayName = (user) => user?.username || user?.name || user?.email || "Pengguna";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { loading, user, logout } = useAuth();
+  const { showToast } = useToast();
+  const profileButtonRef = useRef(null);
+  const profileDropdownRef = useRef(null);
 
   const closeMenu = () => setIsOpen(false);
+  const closeProfileMenu = () => setIsProfileOpen(false);
 
   const openLogin = () => {
     closeMenu();
+    closeProfileMenu();
     setIsLoginOpen(true);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     closeMenu();
-    logout();
+    closeProfileMenu();
+    await logout();
+    showToast("Anda berhasil keluar.", "success");
   };
+
+  const handleProfileClick = () => {
+    closeMenu();
+    closeProfileMenu();
+    showToast("Fitur Profil segera hadir.", "info");
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        isProfileOpen &&
+        profileDropdownRef.current &&
+        profileButtonRef.current &&
+        !profileDropdownRef.current.contains(event.target) &&
+        !profileButtonRef.current.contains(event.target)
+      ) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isProfileOpen]);
 
   if (loading) {
     return (
@@ -77,7 +84,70 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <AuthAction user={user} onLogin={openLogin} onLogout={handleLogout} className="hidden md:flex" />
+            {user ? (
+              <div className="relative">
+                <button
+                  type="button"
+                  ref={profileButtonRef}
+                  aria-label="Buka menu akun"
+                  aria-expanded={isProfileOpen}
+                  onClick={() => setIsProfileOpen((prev) => !prev)}
+                  className="hidden md:inline-flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-white shadow-sm transition hover:bg-indigo-700"
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </button>
+
+                <button
+                  type="button"
+                  ref={profileButtonRef}
+                  aria-label="Buka menu akun"
+                  aria-expanded={isProfileOpen}
+                  onClick={() => setIsProfileOpen((prev) => !prev)}
+                  className="md:hidden inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition"
+                >
+                  <span className="truncate max-w-xs">{getDisplayName(user)}</span>
+                  <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+
+                {isProfileOpen && (
+                  <div
+                    ref={profileDropdownRef}
+                    className="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl ring-1 ring-slate-200"
+                  >
+                    <div className="border-b border-slate-100 px-4 py-3 text-sm text-slate-700">
+                      Halo, <span className="font-semibold text-slate-900">{getDisplayName(user)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleProfileClick}
+                      className="w-full px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50 transition"
+                    >
+                      Profile
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="w-full px-4 py-3 text-left text-sm font-semibold text-rose-600 hover:bg-rose-50 transition"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={openLogin}
+                className="hidden md:inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-indigo-700"
+              >
+                Masuk
+              </button>
+            )}
 
             <button
               type="button"
@@ -110,12 +180,35 @@ const Navbar = () => {
                   </a>
                 ))}
 
-                <AuthAction
-                  user={user}
-                  onLogin={openLogin}
-                  onLogout={handleLogout}
-                  className="w-full justify-center"
-                />
+                {user ? (
+                  <>
+                    <div className="rounded-3xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                      Halo, <span className="font-semibold text-slate-900">{getDisplayName(user)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleProfileClick}
+                      className="w-full rounded-xl px-3 py-2 text-left hover:bg-slate-100 transition"
+                    >
+                      Profile
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="w-full rounded-xl px-3 py-2 text-left text-rose-600 font-semibold hover:bg-rose-50 transition"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={openLogin}
+                    className="w-full rounded-xl bg-indigo-600 px-3 py-2 text-white font-semibold hover:bg-indigo-700 transition"
+                  >
+                    Masuk
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -128,7 +221,9 @@ const Navbar = () => {
 
           <div className="relative bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-100 z-10 p-2">
             <button
+              type="button"
               onClick={() => setIsLoginOpen(false)}
+              aria-label="Tutup form login"
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

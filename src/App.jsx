@@ -6,7 +6,6 @@ function App() {
   return (
     <div className="bg-slate-50 min-h-screen">
       <Navbar />
-      
       <main className="max-w-6xl mx-auto px-4 py-10">
        {/* Section search bar artikel */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
