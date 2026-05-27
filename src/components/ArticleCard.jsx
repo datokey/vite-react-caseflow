@@ -33,17 +33,17 @@ const ArticleCard = ({ title, date, excerpt, content, onEdit, onCopy }) => {
       {/* ========================================== */}
       {/* 1. CARD UTAMA (UKURAN KECIL)               */}
       {/* ========================================== */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow duration-300 p-5 flex flex-col justify-between max-w-sm">
-        <div>
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow duration-300 p-5 flex h-[260px] w-full max-w-[22rem] flex-col justify-between sm:h-[280px] lg:h-[300px]">
+        <div className="min-h-0">
           {/* Bagian Atas: Tanggal & Tombol Aksi */}
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-xs font-medium text-slate-400 flex items-center gap-1">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <span className="flex min-w-0 items-center gap-1 text-xs font-medium text-slate-400">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
               </svg>
-              {date || "15 Mei 2026"}
+              <span className="truncate">{date}</span>
             </span>
-            <div className="flex gap-1">
+            <div className="flex shrink-0 gap-1">
               <button
                 onClick={handleCopy}
                 title={isCopied ? "Teks disalin" : "Copy Teks"}
@@ -55,37 +55,37 @@ const ArticleCard = ({ title, date, excerpt, content, onEdit, onCopy }) => {
                   </svg>
                 ) : (
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
                   </svg>
                 )}
               </button>
               <button onClick={handleEdit} title="Edit Konten" className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors duration-200">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                 </svg>
               </button>
             </div>
           </div>
           {/* Konten Teks Pendek */}
           <div className="mb-4">
-            <h3 className="text-lg font-bold text-slate-900 leading-snug">
+            <h3 className="line-clamp-2 min-h-[3.25rem] text-lg font-bold leading-snug text-slate-900">
               {title}
             </h3>
-            <p className="text-sm text-slate-500 mt-2 leading-relaxed line-clamp-2">
-              {excerpt}
+            <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-500 sm:line-clamp-4">
+              {content}
             </p>
           </div>
         </div>
 
         {/* Tombol Pemicu Modal */}
-        <div className="border-t border-slate-50 pt-3 text-right mt-2">
+        <div className="mt-2 shrink-0 border-t border-slate-50 pt-3 text-right">
           <button 
             onClick={() => setIsOpen(true)} 
             className="inline-flex items-center text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors group/btn"
           >
             Lanjutkan
             <svg className="w-4 h-4 ml-1 transform group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
             </svg>
           </button>
         </div>
@@ -123,7 +123,7 @@ const ArticleCard = ({ title, date, excerpt, content, onEdit, onCopy }) => {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
           </svg>
-          <span>Diterbitkan pada {date || "15 Mei 2026"}</span>
+          <span>Diterbitkan pada {date}</span>
         </div>
 
         {/* Judul Utuh */}
@@ -181,7 +181,7 @@ const ArticleCard = ({ title, date, excerpt, content, onEdit, onCopy }) => {
             className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/80 border border-indigo-100 rounded-xl transition-all"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5M18.364 4.364a1.864 1.864 0 112.636 2.636L12 16.5l-4 1 1-4 9.364-9.364z"></path>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
             </svg>
             <span>Edit</span>
           </button>
