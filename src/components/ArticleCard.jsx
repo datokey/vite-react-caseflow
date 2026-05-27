@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const ArticleCard = ({ title, date, excerpt, content, onEdit, onCopy }) => {
+const ArticleCard = ({ title, date, excerpt, content, onEdit, onCopy, onCopyError }) => {
   // State untuk mengontrol apakah modal detail sedang terbuka atau tidak
   const [isOpen, setIsOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -9,16 +9,23 @@ const ArticleCard = ({ title, date, excerpt, content, onEdit, onCopy }) => {
 
   const handleCopy = (e) => {
     e.stopPropagation();
-    if (onCopy) onCopy();
-    // Menyalin seluruh konten penuh ke clipboard
-    navigator.clipboard.writeText(`${content || excerpt}`).
-      then(() => {
-        setIsCopied(true) // Tampilkan feedback "Teks Disalin!" pada tombol
+
+    if (!navigator.clipboard?.writeText) {
+      onCopyError?.();
+      return;
+    }
+
+    // Menyalin seluruh konten penuh ke clipboard, lalu memberi sinyal ke parent untuk toast.
+    navigator.clipboard
+      .writeText(`${content || excerpt}`)
+      .then(() => {
+        setIsCopied(true); // Tampilkan feedback "Teks Disalin!" pada tombol
+        onCopy?.();
         // Kembalikan tombol ke tulisan "Salin" setelah 2 detik
         setTimeout(() => setIsCopied(false), 2000);
       })
       .catch(() => {
-        alert("Gagal menyalin teks. Silakan coba lagi.");
+        onCopyError?.();
       });
     
   };
@@ -174,10 +181,7 @@ const ArticleCard = ({ title, date, excerpt, content, onEdit, onCopy }) => {
 
           {/* Tombol Edit */}
           <button 
-            onClick={() => {
-              // Tulis fungsi edit kamu di sini, atau panggil prop seperti: onEdit(id)
-              alert("Buka mode edit untuk artikel ini");
-            }}
+            onClick={handleEdit}
             className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/80 border border-indigo-100 rounded-xl transition-all"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

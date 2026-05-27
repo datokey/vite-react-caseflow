@@ -1,18 +1,16 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+
+const AUTH_ME_ENDPOINT = import.meta.env.VITE_ENDPOINT_AUTH_ME || "/api/auth/me";
 
 export default function CekMe() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const endpoint = (import.meta && import.meta.env && import.meta.env.VITE_ENDPOINT_AUTH_ME) || "/api/auth/me";
-
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
-    setError(null);
 
-    fetch(endpoint, { credentials: "include" })
+    fetch(AUTH_ME_ENDPOINT, { credentials: "include" })
       .then(async (res) => {
         if (!res.ok) {
           const text = await res.text();
@@ -36,7 +34,7 @@ export default function CekMe() {
     return () => {
       mounted = false;
     };
-  }, [endpoint]);
+  }, []);
 
   return (
     <div style={{ padding: 20 }}>

@@ -60,4 +60,19 @@ export const articleService = {
         });
         return getSingleArticleFromResponse(data);
     },
+    /**
+     * Menyimpan perubahan artikel.
+     * Endpoint update belum tersedia di konfigurasi, jadi perilaku lama
+     * (mencatat payload ke console) dipertahankan di layer service.
+     */
+    async saveArticleChanges(id, payload) {
+        if (!id) {
+            throw new Error("ID artikel tidak ditemukan.");
+        }
+
+        const articlePayload = { id, ...payload };
+        console.log("Menyimpan artikel:", articlePayload);
+
+        return articlePayload;
+    },
 };

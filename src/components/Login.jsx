@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { useToast } from "../context/ToastContext";
+import { useToast } from "../hooks/useToast";
 
 const INITIAL_FORM = {
   email: "",

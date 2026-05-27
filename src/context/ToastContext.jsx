@@ -1,6 +1,6 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { ToastContext } from "./toastContext";
 
-const ToastContext = createContext(null);
 const TOAST_DURATION_MS = 2000;
 
 export const ToastProvider = ({ children }) => {
@@ -40,14 +40,4 @@ export const ToastProvider = ({ children }) => {
       </div>
     </ToastContext.Provider>
   );
-};
-
-export const useToast = () => {
-  const context = useContext(ToastContext);
-
-  if (!context) {
-    throw new Error("useToast harus digunakan di dalam ToastProvider");
-  }
-
-  return context;
 };

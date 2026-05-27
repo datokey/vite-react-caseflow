@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { useToast } from "../context/ToastContext.jsx";
+import { useToast } from "../hooks/useToast";
 import { useNavigate } from "react-router-dom";
 
 import Login from "./Login.jsx";
