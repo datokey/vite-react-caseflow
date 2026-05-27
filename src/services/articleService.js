@@ -61,18 +61,20 @@ export const articleService = {
         return getSingleArticleFromResponse(data);
     },
     /**
-     * Menyimpan perubahan artikel.
-     * Endpoint update belum tersedia di konfigurasi, jadi perilaku lama
-     * (mencatat payload ke console) dipertahankan di layer service.
+     * Menyimpan perubahan artikel beserta relasi keyword yang dipilih user.
      */
     async saveArticleChanges(id, payload) {
         if (!id) {
             throw new Error("ID artikel tidak ditemukan.");
         }
 
-        const articlePayload = { id, ...payload };
-        console.log("Menyimpan artikel:", articlePayload);
+        const url = ARTICLE_ENDPOINTS.detail.replace(":id", id);
+        const data = await apiRequest(url, {
+            method: "PUT",
+            credentials: "include",
+            body: JSON.stringify(payload),
+        });
 
-        return articlePayload;
+        return getSingleArticleFromResponse(data);
     },
 };

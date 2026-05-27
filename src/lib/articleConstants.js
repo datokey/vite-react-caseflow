@@ -8,7 +8,7 @@ export const ARTICLE_DATE_LOCALE = "id-ID";
 export const EMPTY_ARTICLE_FORM = {
   title: "",
   content: "",
-  keywords: "",
+  keywords: [],
 };
 
 export const ARTICLE_MESSAGES = {

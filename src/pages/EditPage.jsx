@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import KeywordTagInput from '../components/KeywordTagInput';
 import { useEditArticle } from '../hooks/useEditArticle';
 import { ARTICLE_MESSAGES } from '../lib/articleConstants';
 
@@ -11,6 +12,8 @@ export default function EditPage() {
     formData,
     goToHome,
     handleInputChange,
+    handleKeywordsChange,
+    handleKeywordSearchError,
     handleSave,
     isSaving,
     loading,
@@ -85,18 +88,15 @@ export default function EditPage() {
                   />
                 </div>
 
-                {/* Keywords */}
+                {/* Keyword memakai tag input async: search ke server, multi select, dan bisa tambah baru. */}
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Keyword (pisahkan dengan koma)
+                    Keyword
                   </label>
-                  <input
-                    type="text"
-                    name="keywords"
+                  <KeywordTagInput
                     value={formData.keywords}
-                    onChange={handleInputChange}
-                    placeholder="Contoh: react, javascript, programming"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                    onChange={handleKeywordsChange}
+                    onError={handleKeywordSearchError}
                   />
                 </div>
 

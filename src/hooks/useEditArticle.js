@@ -7,6 +7,7 @@ import {
   mapArticleToForm,
 } from "../lib/articleUtils";
 import { articleService } from "../services/articleService";
+import { keywordService } from "../services/keywordService";
 
 export const useEditArticle = (id) => {
   const navigate = useNavigate();
@@ -76,6 +77,35 @@ export const useEditArticle = (id) => {
     }));
   }, []);
 
+  const handleKeywordsChange = useCallback((keywords) => {
+    setFormData((currentFormData) => ({
+      ...currentFormData,
+      keywords,
+    }));
+  }, []);
+
+  const handleKeywordSearchError = useCallback(
+    (message) => {
+      showToast(message || "Gagal memuat suggestion keyword.", "error");
+    },
+    [showToast],
+  );
+
+  const persistNewKeywords = useCallback(async (keywords) => {
+    const savedKeywords = await Promise.all(
+      keywords.map((keyword) => {
+        if (keyword.id && !keyword.isNew) {
+          return keyword;
+        }
+
+        // Keyword baru dibuat lebih dulu agar artikel bisa menyimpan relasi keyword yang valid.
+        return keywordService.createKeyword(keyword.label);
+      }),
+    );
+
+    return savedKeywords;
+  }, []);
+
   const handleSave = useCallback(
     async (event) => {
       event.preventDefault();
@@ -84,8 +114,14 @@ export const useEditArticle = (id) => {
         setIsSaving(true);
         setError(null);
 
-        // Alur submit lama dipertahankan, tetapi payload disiapkan di helper dan dikirim lewat service.
-        await articleService.saveArticleChanges(id, buildArticleSavePayload(formData));
+        const savedKeywords = await persistNewKeywords(formData.keywords);
+        const articlePayload = buildArticleSavePayload({
+          ...formData,
+          keywords: savedKeywords,
+        });
+
+        // Payload artikel disiapkan setelah keyword baru dipastikan tersimpan di database.
+        await articleService.saveArticleChanges(id, articlePayload);
         showToast(ARTICLE_MESSAGES.saveSuccess, "success");
         goToHome();
       } catch (err) {
@@ -96,7 +132,7 @@ export const useEditArticle = (id) => {
         setIsSaving(false);
       }
     },
-    [formData, goToHome, id, showToast],
+    [formData, goToHome, id, persistNewKeywords, showToast],
   );
 
   return {
@@ -106,6 +142,8 @@ export const useEditArticle = (id) => {
     isSaving,
     goToHome,
     handleInputChange,
+    handleKeywordsChange,
+    handleKeywordSearchError,
     handleSave,
   };
 };
