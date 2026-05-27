@@ -1,72 +1,58 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDebounce } from "./useDebounce";
 import { useToast } from "./useToast";
 import { ARTICLE_MESSAGES, ARTICLE_ROUTES } from "../lib/articleConstants";
-import {
-  buildArticleSavePayload,
-  mapArticleToForm,
-} from "../lib/articleUtils";
+import { buildArticleSavePayload, mapArticleToForm } from "../lib/articleUtils";
 import { articleService } from "../services/articleService";
 import { keywordService } from "../services/keywordService";
 
-export const useEditArticle = (id) => {
+const CREATE_ARTICLE_DRAFT_KEY = "create-article-draft";
+const AUTOSAVE_DELAY_MS = 700;
+
+const getInitialFormData = () => {
+  try {
+    const draft = window.localStorage.getItem(CREATE_ARTICLE_DRAFT_KEY);
+    const parsedDraft = draft ? JSON.parse(draft) : null;
+
+    return parsedDraft
+      ? {
+          ...mapArticleToForm(null),
+          ...parsedDraft,
+          keywords: Array.isArray(parsedDraft.keywords) ? parsedDraft.keywords : [],
+        }
+      : mapArticleToForm(null);
+  } catch {
+    return mapArticleToForm(null);
+  }
+};
+
+export const useCreateArticle = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState(getInitialFormData);
   const [error, setError] = useState(null);
-  const [formData, setFormData] = useState(() => mapArticleToForm(null));
   const [isSaving, setIsSaving] = useState(false);
+  const debouncedFormData = useDebounce(formData, AUTOSAVE_DELAY_MS);
+
+  const hasDraftContent = useMemo(
+    () => Boolean(formData.title || formData.content || formData.keywords.length),
+    [formData],
+  );
 
   const goToHome = useCallback(() => {
     navigate(ARTICLE_ROUTES.home);
   }, [navigate]);
 
   useEffect(() => {
-    let isActive = true;
+    if (!hasDraftContent) {
+      window.localStorage.removeItem(CREATE_ARTICLE_DRAFT_KEY);
+      return;
+    }
 
-    const loadArticle = async () => {
-      if (!id) {
-        setError(ARTICLE_MESSAGES.missingId);
-        setLoading(false);
-        showToast(ARTICLE_MESSAGES.missingId, "error");
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Detail artikel dinormalisasi di helper agar struktur response backend tidak bocor ke UI.
-        const article = await articleService.getArticleById(id);
-
-        if (!isActive) return;
-
-        if (!article) {
-          setError(ARTICLE_MESSAGES.notFound);
-          showToast(ARTICLE_MESSAGES.notFound, "error");
-          return;
-        }
-
-        setFormData(mapArticleToForm(article));
-      } catch (err) {
-        if (!isActive) return;
-
-        const message = err?.message || ARTICLE_MESSAGES.loadFailed;
-        setError(message);
-        showToast(message, "error");
-      } finally {
-        if (isActive) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadArticle();
-
-    return () => {
-      isActive = false;
-    };
-  }, [id, showToast]);
+    // Draft create disimpan lokal agar tulisan user tidak hilang saat refresh/tab tertutup.
+    window.localStorage.setItem(CREATE_ARTICLE_DRAFT_KEY, JSON.stringify(debouncedFormData));
+  }, [debouncedFormData, hasDraftContent]);
 
   const handleInputChange = useCallback((event) => {
     const { name, value } = event.target;
@@ -77,17 +63,17 @@ export const useEditArticle = (id) => {
     }));
   }, []);
 
-  const handleKeywordsChange = useCallback((keywords) => {
-    setFormData((currentFormData) => ({
-      ...currentFormData,
-      keywords,
-    }));
-  }, []);
-
   const handleContentChange = useCallback((content) => {
     setFormData((currentFormData) => ({
       ...currentFormData,
       content,
+    }));
+  }, []);
+
+  const handleKeywordsChange = useCallback((keywords) => {
+    setFormData((currentFormData) => ({
+      ...currentFormData,
+      keywords,
     }));
   }, []);
 
@@ -120,33 +106,30 @@ export const useEditArticle = (id) => {
         setIsSaving(true);
         setError(null);
 
-        // Keyword baru dibuat lebih dulu agar artikel bisa menyimpan relasi keyword yang valid.
         const savedKeywords = await keywordService.persistKeywords(formData.keywords);
         const articlePayload = buildArticleSavePayload({
           ...formData,
           keywords: savedKeywords,
         });
 
-        // Payload artikel disiapkan setelah keyword baru dipastikan tersimpan di database.
-        await articleService.saveArticleChanges(id, articlePayload);
-        showToast(ARTICLE_MESSAGES.saveSuccess, "success");
+        await articleService.createArticle(articlePayload);
+        window.localStorage.removeItem(CREATE_ARTICLE_DRAFT_KEY);
+        showToast(ARTICLE_MESSAGES.createSuccess, "success");
         goToHome();
       } catch (err) {
-        const message = err?.message || ARTICLE_MESSAGES.saveFailed;
+        const message = err?.message || ARTICLE_MESSAGES.createFailed;
         setError(message);
         showToast(message, "error");
       } finally {
         setIsSaving(false);
       }
     },
-    [formData, goToHome, id, showToast],
+    [formData, goToHome, showToast],
   );
 
   return {
-    loading,
     error,
     formData,
-    isSaving,
     goToHome,
     handleContentChange,
     handleEditorError,
@@ -154,5 +137,6 @@ export const useEditArticle = (id) => {
     handleKeywordsChange,
     handleKeywordSearchError,
     handleSave,
+    isSaving,
   };
 };

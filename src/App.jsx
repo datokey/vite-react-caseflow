@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ArticleCard from './components/ArticleCard';
 import Footer from './components/Footer';
-import EditPage from './pages/EditPage';
+import EditPage from './pages/EditPage'; 
+import CreateArticlePage from './pages/CreateArticlePage';
 import { useArticleSearch } from './hooks/useArticleSearch';
 import { ARTICLE_MESSAGES } from './lib/articleConstants';
 import { getArticleId } from './lib/articleUtils';
@@ -14,6 +15,7 @@ function HomePage() {
     getDisplayDate,
     handleCopyArticle,
     handleCopyArticleError,
+    handleCreateArticle,
     handleEditArticle,
     handleSearch,
     handleSearchKeyDown,
@@ -42,6 +44,13 @@ function HomePage() {
             className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
           >
             Cari
+          </button>
+          <button
+            type="button"
+            onClick={handleCreateArticle}
+            className="w-full sm:w-auto border border-indigo-200 bg-white px-4 py-2 text-indigo-700 font-semibold rounded-lg hover:bg-indigo-50 transition-colors"
+          >
+            Tulis Artikel
           </button>
         </div>
 
@@ -92,6 +101,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/create" element={<CreateArticlePage />} />
         <Route path="/edit/:id" element={<EditPage />} />
       </Routes>
     </BrowserRouter>

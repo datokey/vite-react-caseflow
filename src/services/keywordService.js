@@ -57,4 +57,16 @@ export const keywordService = {
 
     return normalizeKeyword(getKeywordFromResponse(data), { label: keywordName, value: keywordName.toLowerCase() });
   },
+
+  async persistKeywords(keywords) {
+    return Promise.all(
+      keywords.map((keyword) => {
+        if (keyword.id && !keyword.isNew) {
+          return keyword;
+        }
+
+        return this.createKeyword(keyword.label);
+      }),
+    );
+  },
 };

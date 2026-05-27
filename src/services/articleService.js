@@ -61,6 +61,18 @@ export const articleService = {
         return getSingleArticleFromResponse(data);
     },
     /**
+     * Membuat artikel baru dengan konten HTML dan relasi keyword.
+     */
+    async createArticle(payload) {
+        const data = await apiRequest(ARTICLE_ENDPOINTS.base, {
+            method: "POST",
+            credentials: "include",
+            body: JSON.stringify(payload),
+        });
+
+        return getSingleArticleFromResponse(data);
+    },
+    /**
      * Menyimpan perubahan artikel beserta relasi keyword yang dipilih user.
      */
     async saveArticleChanges(id, payload) {

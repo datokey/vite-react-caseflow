@@ -46,6 +46,10 @@ export const useArticleSearch = () => {
     [navigate, showToast],
   );
 
+  const handleCreateArticle = useCallback(() => {
+    navigate(ARTICLE_ROUTES.create);
+  }, [navigate]);
+
   const handleCopyArticle = useCallback(
     (article) => {
       showToast(ARTICLE_MESSAGES.copySuccess(article?.title || "Artikel"), "success");
@@ -65,6 +69,7 @@ export const useArticleSearch = () => {
     setSearchInput,
     handleSearch,
     handleSearchKeyDown,
+    handleCreateArticle,
     handleEditArticle,
     handleCopyArticle,
     handleCopyArticleError,

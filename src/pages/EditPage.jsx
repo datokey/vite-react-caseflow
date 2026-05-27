@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import KeywordTagInput from '../components/KeywordTagInput';
+import ArticleForm from '../components/articles/ArticleForm';
 import { useEditArticle } from '../hooks/useEditArticle';
 import { ARTICLE_MESSAGES } from '../lib/articleConstants';
 
@@ -11,6 +11,8 @@ export default function EditPage() {
     error,
     formData,
     goToHome,
+    handleContentChange,
+    handleEditorError,
     handleInputChange,
     handleKeywordsChange,
     handleKeywordSearchError,
@@ -52,83 +54,20 @@ export default function EditPage() {
             </div>
           )}
 
-          {/* Form */}
+          {/* Form edit memakai ArticleForm yang sama dengan create agar editor dan keyword tetap konsisten. */}
           {!loading && !error && (
-            <form onSubmit={handleSave} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
-              <div className="space-y-6">
-                {/* Field form memakai state dari hook agar UI tidak perlu tahu detail fetch/submit artikel. */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Judul Artikel
-                  </label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleInputChange}
-                    placeholder="Masukkan judul artikel..."
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-                    required
-                  />
-                </div>
-
-                {/* Konten */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Konten Artikel
-                  </label>
-                  <textarea
-                    name="content"
-                    value={formData.content}
-                    onChange={handleInputChange}
-                    placeholder="Masukkan konten artikel..."
-                    rows={12}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none"
-                    required
-                  />
-                </div>
-
-                {/* Keyword memakai tag input async: search ke server, multi select, dan bisa tambah baru. */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Keyword
-                  </label>
-                  <KeywordTagInput
-                    value={formData.keywords}
-                    onChange={handleKeywordsChange}
-                    onError={handleKeywordSearchError}
-                  />
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={goToHome}
-                    className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSaving}
-                    className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
-                  >
-                    {isSaving ? (
-                      <>
-                        <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"></circle>
-                          <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Menyimpan...
-                      </>
-                    ) : (
-                      <>Simpan Perubahan</>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </form>
+            <ArticleForm
+              formData={formData}
+              isSaving={isSaving}
+              onCancel={goToHome}
+              onChangeContent={handleContentChange}
+              onChangeField={handleInputChange}
+              onChangeKeywords={handleKeywordsChange}
+              onEditorError={handleEditorError}
+              onKeywordError={handleKeywordSearchError}
+              onSubmit={handleSave}
+              submitLabel="Simpan Perubahan"
+            />
           )}
         </main>
       </div>
