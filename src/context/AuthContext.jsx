@@ -1,33 +1,50 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { authService } from "../services/authService";
-
-const AuthContext = createContext(null);
+import { AuthContext } from "./authContext";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authenticating, setAuthenticating] = useState(false);
 
-  const loadCurrentUser = useCallback(async () => {
-    try {
-      const currentUser = await authService.getCurrentUser();
-      setUser(currentUser);
-    } catch (error) {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
+    let isMounted = true;
+
+    const loadCurrentUser = async () => {
+      try {
+        const currentUser = await authService.getCurrentUser();
+
+        if (isMounted) {
+          setUser(currentUser);
+        }
+      } catch {
+        if (isMounted) {
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
     loadCurrentUser();
-  }, [loadCurrentUser]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const login = useCallback(async (credentials) => {
     setAuthenticating(true);
 
     try {
-      const userData = await authService.login(credentials);
+      let userData = await authService.login(credentials);
+
+      if (!userData) {
+        userData = await authService.getCurrentUser();
+      }
+
       setUser(userData);
       return { success: true, user: userData };
     } catch (error) {
@@ -40,7 +57,7 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(async () => {
     try {
       await authService.logout();
-    } catch (_) {
+    } catch {
       // Tetap bersihkan user meskipun logout gagal.
     } finally {
       setUser(null);
@@ -53,14 +70,4 @@ export const AuthProvider = ({ children }) => {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error("useAuth harus digunakan di dalam AuthProvider");
-  }
-
-  return context;
 };

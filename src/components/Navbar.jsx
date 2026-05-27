@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from "../context/AuthContext.jsx";
+import { useAuth } from "../hooks/useAuth";
 import { useToast } from "../context/ToastContext.jsx";
 import { useNavigate } from "react-router-dom";
 
@@ -19,9 +19,6 @@ const Navbar = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  const cekMe = () => {
-    navigate('/cek-me');
-  };
   const { loading, user, logout } = useAuth();
   const { showToast } = useToast();
   const profileMenuRef = useRef(null);
@@ -45,7 +42,7 @@ const Navbar = () => {
   const handleProfileClick = () => {
     closeMenu();
     closeProfileMenu();
-    showToast("Fitur Profil segera hadir.", "info");
+    navigate("/cek-me");
   };
 
   useEffect(() => {
