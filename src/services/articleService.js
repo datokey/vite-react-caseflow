@@ -2,6 +2,13 @@ import { apiRequest } from "../lib/apiClient";
 
 const ARTICLE_ENDPOINTS = {
     base: import.meta.env.VITE_ENDPOINT_ARTICLES,
+    search: import.meta.env.VITE_ENDPOINT_ARTICLES_SEARCH,
+    detail: import.meta.env.VITE_ENDPOINT_ARTICLE_DETAIL,
+};
+
+const buildQueryString = (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return queryString ? `?${queryString}` : "";
 };
 
 // Helper function untuk mengekstrak data dari berbagai kemungkinan struktur response backend
@@ -17,41 +24,40 @@ const getSingleArticleFromResponse = (data) => {
 export const articleService = {
     /**
    * Mengambil daftar semua artikel
-   * Bisa menerima parameter untuk search/pagination, contoh: { search: "react", page: 1 }
+   * Bisa menerima parameter pagination, contoh: { page: 1, limit: 10 }
    */
     async getArticles(params = {}) {
-        //Membentuk query string dari params contoh: {?search=react&page=1}
-        const queryString = new URLSearchParams(params).toString();
-        const url = queryString ? `${ARTICLE_ENDPOINTS.base}?${queryString}` : ARTICLE_ENDPOINTS.base;
+        const url = `${ARTICLE_ENDPOINTS.base}${buildQueryString(params)}`;
 
         const data = await apiRequest(url, {
             method: "GET",
             credentials: "include",
         });
-        
+
+        return getArticlesFromResponse(data);
+    },
+    /**
+   * Mencari artikel berdasarkan keyword
+   */
+    async searchArticles(keyword, params = {}) {
+        const url = `${ARTICLE_ENDPOINTS.search}${buildQueryString({ q: keyword, ...params })}`;
+
+        const data = await apiRequest(url, {
+            method: "GET",
+            credentials: "include",
+        });
+
         return getArticlesFromResponse(data);
     },
     /**
      * Mengambil detail satu artikel berdasarkan ID atau Slug
      */
     async getArticleById(id) {
-        const data = await apiRequest(`${ARTICLE_ENDPOINTS.base}/${id}`, {
-        method: "GET",
-        credentials: "include",
+        const url = ARTICLE_ENDPOINTS.detail.replace(":id", id);
+        const data = await apiRequest(url, {
+            method: "GET",
+            credentials: "include",
         });
         return getSingleArticleFromResponse(data);
-        
-    }, 
-    /**
-     * Mengambil detail satu artikel berdasarkan keyword
-     */
-    async getArticleById(keyword) {
-        const data = await apiRequest(`${ARTICLE_ENDPOINTS.base}/${keyword}`, {
-           method:"GET",
-           credentials: "include" ,
-        });
-    return getArticlesFromResponse (data);
-    }
-  
-
+    },
 };

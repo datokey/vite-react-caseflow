@@ -13,12 +13,14 @@ function App() {
   const [query, setQuery] = useState(""); // State ini yang akan mentrigger fetch ulang
 
   // 2. Mengambil data dari backend menggunakan Custom Hook React Query
-  // Kita kirimkan parameter { search: query } ke backend
-  const { articles, isLoadingArticles, isErrorArticles, errorMsg } = useArticles({ search: query });
+  // Kita gunakan endpoint pencarian jika user memasukkan kata kunci
+  const { articles, isLoadingArticles, isErrorArticles, errorMsg } = useArticles(
+    query ? { search: query } : {}
+  );
 
   // 3. Fungsi yang dijalankan saat tombol "Cari" diklik atau tekan Enter
   const handleSearch = () => {
-    setQuery(searchInput);
+    setQuery(searchInput.trim());
   };
 
   const formatedDate = (date) => {
