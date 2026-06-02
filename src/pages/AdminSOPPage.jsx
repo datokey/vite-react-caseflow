@@ -1,7 +1,7 @@
-import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import KeywordTagInput from "../components/KeywordTagInput";
+import TemplateChatEditor from "../components/TemplateChatEditor";
 import { articleService } from "../services/articleService";
 import { keywordService } from "../services/keywordService";
 import { useToast } from "../hooks/useToast";
@@ -9,6 +9,11 @@ import { ARTICLE_ROUTES } from "../lib/articleConstants";
 import { buildArticleSavePayload } from "../lib/articleUtils";
 
 const DEFAULT_CATATAN = "Tidak ada catatan pada template ini";
+const NAVIGATION_PREFERENCE_KEY = "adminSopNavigationPreference";
+const NAVIGATION_PREFERENCES = {
+  stay: "stay-admin",
+  home: "go-home",
+};
 
 const LOG_TYPES = [
   { value: "Panduan Operasional", label: "Panduan Operasional" },
@@ -19,144 +24,55 @@ const LOG_TYPES = [
   { value: "Other", label: "Lainnya" },
 ];
 
-const AVAILABLE_VARIABLES = [
-  { name: "nama_pelanggan", display: "Nama Pelanggan" },
-  { name: "tanggal", display: "Tanggal" },
-  { name: "nomor_tiket", display: "Nomor Tiket" },
-  { name: "sapaan", display: "Sapaan (Bapak/Ibu)" },
-  { name: "produk", display: "Produk" },
-  { name: "status", display: "Status" },
-];
+const getStoredNavigationPreference = () => {
+  try {
+    const storedPreference = window.localStorage.getItem(NAVIGATION_PREFERENCE_KEY);
 
-function TextareaWithVariables({
-  id,
-  value,
-  onChange,
-  placeholder,
-  label,
-  isVariableMenuOpen,
-  onToggleVariableMenu,
-  onCloseVariableMenu,
-}) {
-  const textareaRef = useRef(null);
-  const lineNumbersRef = useRef(null);
-  const lineNumbers = Array.from(
-    { length: Math.max(value.split(/\r\n|\r|\n/).length, 1) },
-    (_, index) => index + 1,
-  );
+    return Object.values(NAVIGATION_PREFERENCES).includes(storedPreference)
+      ? storedPreference
+      : NAVIGATION_PREFERENCES.stay;
+  } catch {
+    return NAVIGATION_PREFERENCES.stay;
+  }
+};
 
-  const handleTemplateScroll = () => {
-    if (!textareaRef.current || !lineNumbersRef.current) return;
+const saveNavigationPreference = (preference) => {
+  try {
+    window.localStorage.setItem(NAVIGATION_PREFERENCE_KEY, preference);
+  } catch {
+    // Preferensi hanya enhancement; submit SOP tetap berjalan jika storage dibatasi.
+  }
+};
 
-    lineNumbersRef.current.style.transform = `translateY(-${textareaRef.current.scrollTop}px)`;
-  };
-
-  const insertVariable = (variable) => {
-    const textarea = textareaRef.current;
-
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const variableText = `{{${variable}}}`;
-    const newText = value.slice(0, start) + variableText + value.slice(end);
-    const newCursorPosition = start + variableText.length;
-
-    onChange(newText);
-    onCloseVariableMenu(id);
-
-    window.setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(newCursorPosition, newCursorPosition);
-    }, 0);
-  };
-
-  return (
-    <div className="relative">
-      <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">
-        {label}
-      </label>
-      <div className="relative overflow-hidden rounded-lg border border-slate-300 bg-white transition focus-within:ring-2 focus-within:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950">
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-12 overflow-hidden border-r border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
-          <div
-            ref={lineNumbersRef}
-            className="px-2 py-3 text-right font-mono text-xs leading-6 text-slate-400"
-          >
-            {lineNumbers.map((lineNumber) => (
-              <div key={lineNumber} className="h-6">
-                {lineNumber}
-              </div>
-            ))}
-          </div>
-        </div>
-        <textarea
-          id={id}
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onScroll={handleTemplateScroll}
-          placeholder={placeholder}
-          rows={5}
-          className="block w-full resize-y border-0 bg-transparent py-3 pl-14 pr-16 font-mono text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-500"
-        />
-        <button
-          type="button"
-          onClick={() => onToggleVariableMenu(id)}
-          className="absolute bottom-3 right-3 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-          title="Insert variable"
-        >
-          @var
-        </button>
-
-        {isVariableMenuOpen && (
-          <div className="absolute bottom-12 right-0 z-10 bg-white border border-slate-200 rounded-lg shadow-lg p-2 min-w-max dark:border-slate-800 dark:bg-slate-900">
-            {AVAILABLE_VARIABLES.map((variable) => (
-              <button
-                key={variable.name}
-                type="button"
-                onClick={() => insertVariable(variable.name)}
-                className="block w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-indigo-50 rounded transition dark:text-slate-200 dark:hover:bg-indigo-500/15"
-              >
-                <span className="font-mono text-indigo-600">
-                  {"{{"}{variable.name}{"}}"}
-                </span>
-                <span className="ml-2 text-slate-500 dark:text-slate-400">
-                  ({variable.display})
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-        Klik @var untuk menambahkan variabel otomatis
-      </p>
-    </div>
-  );
-}
+const createEmptyFormData = () => ({
+  title: "",
+  jenisLog: "",
+  kondisi: "",
+  catatan: DEFAULT_CATATAN,
+  keyword: [],
+  penanganan: [
+    {
+      id: 1,
+      judulPenanganan: "",
+      instruksiInternal: "",
+      templateChat: "",
+    },
+  ],
+});
 
 export default function AdminSOPPage() {
-  const navigate = useNavigate();
   const { showToast } = useToast();
-  const [formData, setFormData] = useState({
-    title: "",
-    jenisLog: "",
-    kondisi: "",
-    catatan: DEFAULT_CATATAN,
-    keyword: [],
-    penanganan: [
-      {
-        id: 1,
-        judulPenanganan: "",
-        instruksiInternal: "",
-        templateChat: "",
-      },
-    ],
-  });
+  const [formData, setFormData] = useState(createEmptyFormData);
+  const [navigationPreference, setNavigationPreference] = useState(getStoredNavigationPreference);
 
   const [showVariableMenu, setShowVariableMenu] = useState({});
   const [isSavingKeyword, setIsSavingKeyword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  const handleNavigationPreferenceChange = (preference) => {
+    setNavigationPreference(preference);
+    saveNavigationPreference(preference);
+  };
 
   const handleFieldChange = (field, value) => {
     setFormData((prev) => ({
@@ -322,23 +238,15 @@ export default function AdminSOPPage() {
 
     try {
       await articleService.createArticle(payload);
+      saveNavigationPreference(navigationPreference);
       showToast("SOP berhasil disimpan!", "success");
-      setFormData({
-        title: "",
-        jenisLog: "",
-        kondisi: "",
-        catatan: DEFAULT_CATATAN,
-        keyword: [],
-        penanganan: [
-          {
-            id: 1,
-            judulPenanganan: "",
-            instruksiInternal: "",
-            templateChat: "",
-          },
-        ],
-      });
-      setTimeout(() => navigate(ARTICLE_ROUTES.home), 1500);
+      setFormData(createEmptyFormData());
+
+      if (navigationPreference === NAVIGATION_PREFERENCES.home) {
+        window.setTimeout(() => {
+          window.location.href = ARTICLE_ROUTES.home;
+        }, 600);
+      }
     } catch (error) {
       const message = error?.message || "Gagal menyimpan SOP";
       showToast(message, "error");
@@ -407,7 +315,7 @@ export default function AdminSOPPage() {
               <TextareaAutosize
                 value={formData.kondisi}
                 onChange={(e) => handleFieldChange("kondisi", e.target.value)}
-                placeholder="Masukkan kondisi (satu per baris)&#10;Contoh:&#10;Pelanggan marah tentang kualitas produk&#10;Delay pengiriman&#10;Kesalahan dalam pesanan"
+                placeholder="Masukkan kondisi (satu per baris)&#10;Contoh:&#10;Pengguna menanyakan kegunaan atau fungsi Privy&#10;Pengguna menanyakan manfaat Privy&#10;Pengguna meminta faktur pajak untuk akun personal"
                 minRows={4}
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500"
               />
@@ -468,7 +376,7 @@ export default function AdminSOPPage() {
                             e.target.value
                           )
                         }
-                        placeholder="Contoh: Tahap 1: Dengarkan dan Pahami"
+                        placeholder="Contoh: Tahap 1: Privy itu perusahaan apa?"
                         className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
                         required
                       />
@@ -487,7 +395,8 @@ export default function AdminSOPPage() {
                             e.target.value
                           )
                         }
-                        placeholder="Masukkan instruksi (satu per baris)&#10;Contoh:&#10;Dengarkan keluh kesah pelanggan hingga selesai&#10;Tunjukkan empati&#10;Catat poin-poin penting"
+                        placeholder="Masukkan instruksi (satu per baris)&#10;Contoh:&#10; Kegunaan dan fungsi Privy&#10;Manfaat Privy &#10;Pengguna meminta faktur pajak untuk akun person
+ "
                         minRows={3}
                         className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
                       />
@@ -496,7 +405,7 @@ export default function AdminSOPPage() {
                       </p>
                     </div>
 
-                    <TextareaWithVariables
+                    <TemplateChatEditor
                       id={`textarea-${step.id}-templateChat`}
                       value={step.templateChat}
                       onChange={(value) =>
@@ -506,7 +415,7 @@ export default function AdminSOPPage() {
                           value
                         )
                       }
-                      placeholder={"Masukkan template chat (plain text)\nGunakan {{variabel}} untuk placeholder\nContoh: Saya memahami frustrasi Anda. Mari kita lihat bagaimana saya bisa membantu..."}
+                      placeholder="Masukkan template chat. Gunakan toolbar untuk numbering/bullet dan {{variabel}} untuk placeholder."
                       label="Template Chat"
                       isVariableMenuOpen={Boolean(showVariableMenu[`textarea-${step.id}-templateChat`])}
                       onToggleVariableMenu={handleToggleVariableMenu}
@@ -557,27 +466,73 @@ export default function AdminSOPPage() {
             </div>
           </div>
 
+          {/* Navigation Preference Section */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="text-lg font-semibold text-slate-900 mb-4 dark:text-white">
+              Setelah SOP Berhasil Disimpan
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label
+                className={`cursor-pointer rounded-lg border p-4 transition ${
+                  navigationPreference === NAVIGATION_PREFERENCES.stay
+                    ? "border-indigo-300 bg-indigo-50 ring-2 ring-indigo-100 dark:border-indigo-500/50 dark:bg-indigo-500/10 dark:ring-indigo-500/20"
+                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <input
+                    type="radio"
+                    name="navigationPreference"
+                    value={NAVIGATION_PREFERENCES.stay}
+                    checked={navigationPreference === NAVIGATION_PREFERENCES.stay}
+                    onChange={(event) => handleNavigationPreferenceChange(event.target.value)}
+                    className="mt-1 h-4 w-4 accent-indigo-600"
+                  />
+                  <div>
+                    <p className="font-semibold text-slate-900 dark:text-white">
+                      Tetap di halaman Admin SOP
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                      Form tetap berada di halaman ini setelah SOP berhasil dibuat.
+                    </p>
+                  </div>
+                </div>
+              </label>
+
+              <label
+                className={`cursor-pointer rounded-lg border p-4 transition ${
+                  navigationPreference === NAVIGATION_PREFERENCES.home
+                    ? "border-indigo-300 bg-indigo-50 ring-2 ring-indigo-100 dark:border-indigo-500/50 dark:bg-indigo-500/10 dark:ring-indigo-500/20"
+                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <input
+                    type="radio"
+                    name="navigationPreference"
+                    value={NAVIGATION_PREFERENCES.home}
+                    checked={navigationPreference === NAVIGATION_PREFERENCES.home}
+                    onChange={(event) => handleNavigationPreferenceChange(event.target.value)}
+                    className="mt-1 h-4 w-4 accent-indigo-600"
+                  />
+                  <div>
+                    <p className="font-semibold text-slate-900 dark:text-white">
+                      Beralih ke Halaman Utama
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                      Aplikasi membuka ulang halaman utama agar data SOP terbaru langsung dimuat.
+                    </p>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
           {/* Action Buttons */}
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() =>
-                setFormData({
-                  title: "",
-                  jenisLog: "",
-                  kondisi: "",
-                  catatan: DEFAULT_CATATAN,
-                  keyword: [],
-                  penanganan: [
-                    {
-                      id: 1,
-                      judulPenanganan: "",
-                      instruksiInternal: "",
-                      templateChat: "",
-                    },
-                  ],
-                })
-              }
+              onClick={() => setFormData(createEmptyFormData())}
               className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               Reset

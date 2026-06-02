@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { BrowserRouter, Link, Route, Routes, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import Navbar from "./components/Navbar"; 
+import SanitizedHtmlRenderer from "./components/SanitizedHtmlRenderer";
 import EditPage from "./pages/EditPage";
 import AdminSOPPage from "./pages/AdminSOPPage";
 import CekMe from "./pages/cekMe";
@@ -9,16 +10,8 @@ import { useAuth } from "./hooks/useAuth";
 import { useArticles } from "./hooks/useArticles";
 import { useToast } from "./hooks/useToast";
 import { ARTICLE_MESSAGES, ARTICLE_ROUTES } from "./lib/articleConstants";
+import { hasHtmlMarkup, htmlToPlainText } from "./lib/htmlUtils";
 import { articleService } from "./services/articleService";
-
-const CATEGORY_ACCENTS = [
-  "#0ea5e9",
-  "#10b981",
-  "#f97316",
-  "#8b5cf6",
-  "#ef4444",
-  "#14b8a6",
-];
 
 const NAME_PLACEHOLDER = "Nama Pelanggan";
 const TEMPLATE_NAME_PATTERN =
@@ -199,11 +192,6 @@ const getCategory = (article) =>
       article?.category ||
       article?.kategori,
   ) || "SOP Operasional";
-
-const getCategoryAccent = (category) => {
-  const hash = category.split("").reduce((total, char) => total + char.charCodeAt(0), 0);
-  return CATEGORY_ACCENTS[hash % CATEGORY_ACCENTS.length];
-};
 
 const getConditions = (article) =>
   toTextList(getFirstValue(article?.details, ["Kondisi", "kondisi", "conditions", "condition"]));
@@ -387,7 +375,7 @@ function SopPreviewCard({ article, isSelected, onSelect }) {
     >
       <div className="flex min-w-0 flex-col gap-2">
         <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{category}</p>
-        <h2 className={`line-clamp-2 text-base font-bold leading-snug`}>
+        <h2 className={`line-clamp-2 text-base font-bold leading-snug ${titleClassName}`}>
           {article?.title || "Tanpa judul SOP"}
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -405,7 +393,9 @@ function SopPreviewCard({ article, isSelected, onSelect }) {
 
 function TemplateChatBox({ template, stepId, copiedStepId, customerName, onCopy }) {
   const filledTemplate = fillTemplate(template, customerName);
+  const copyText = htmlToPlainText(filledTemplate);
   const isCopied = copiedStepId === stepId;
+  const shouldRenderHtml = hasHtmlMarkup(filledTemplate);
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
@@ -413,15 +403,22 @@ function TemplateChatBox({ template, stepId, copiedStepId, customerName, onCopy 
         <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Template chat</p>
         <button
           type="button"
-          onClick={() => onCopy(filledTemplate, stepId)}
+          onClick={() => onCopy(copyText, stepId)}
           className="w-full rounded-lg border border-slate-300 bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 sm:w-auto dark:border-slate-700 dark:bg-indigo-600 dark:hover:bg-indigo-500"
         >
           {isCopied ? "Tersalin" : "Copy"}
         </button>
       </div>
-      <p className="whitespace-pre-wrap px-4 py-4 text-sm leading-6 text-slate-700 dark:text-slate-300">
-        {filledTemplate}
-      </p>
+      {shouldRenderHtml ? (
+        <SanitizedHtmlRenderer
+          html={filledTemplate}
+          className="px-4 py-4 text-sm leading-6"
+        />
+      ) : (
+        <p className="whitespace-pre-wrap px-4 py-4 text-sm leading-6 text-slate-700 dark:text-slate-300">
+          {filledTemplate}
+        </p>
+      )}
     </div>
   );
 }
@@ -582,7 +579,7 @@ function SopWorkspace({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
               <p className="text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">{category}</p>
-              <h1 className={`mt-2 text-2xl font-black leading-tight sm:text-3xl`}>
+              <h1 className={`mt-2 text-2xl font-black leading-tight sm:text-3xl ${titleClassName}`}>
                 {article?.title || "Tanpa judul SOP"}
               </h1>
               {article?.content && (

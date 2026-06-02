@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -124,4 +125,81 @@ body {
   color: #94a3b8;
   height: 0;
   pointer-events: none;
+}
+
+.template-chat-editor .ql-toolbar.ql-snow {
+  border-color: #cbd5e1;
+  border-radius: 0.5rem 0.5rem 0 0;
+  background: #f8fafc;
+}
+
+.template-chat-editor .ql-container.ql-snow {
+  min-height: 11rem;
+  border-color: #cbd5e1;
+  border-radius: 0 0 0.5rem 0.5rem;
+  background: #ffffff;
+}
+
+.template-chat-editor .ql-editor {
+  min-height: 11rem;
+  font-size: 0.875rem;
+  line-height: 1.625;
+  color: #0f172a;
+}
+
+.template-chat-editor .ql-editor.ql-blank::before {
+  color: #94a3b8;
+  font-style: normal;
+}
+
+:root.dark .template-chat-editor .ql-toolbar.ql-snow {
+  border-color: #334155;
+  background: #0f172a;
+}
+
+:root.dark .template-chat-editor .ql-container.ql-snow {
+  border-color: #334155;
+  background: #020617;
+}
+
+:root.dark .template-chat-editor .ql-editor {
+  color: #f8fafc;
+}
+
+:root.dark .template-chat-editor .ql-editor.ql-blank::before {
+  color: #64748b;
+}
+
+:root.dark .template-chat-editor .ql-picker {
+  color: #cbd5e1;
+}
+
+:root.dark .template-chat-editor .ql-stroke {
+  stroke: #cbd5e1;
+}
+
+:root.dark .template-chat-editor .ql-fill {
+  fill: #cbd5e1;
+}
+
+:root.dark .template-chat-editor .ql-picker-options {
+  border-color: #334155;
+  background: #0f172a;
+}
+
+.template-chat-content .ql-ui {
+  display: none;
+}
+
+.template-chat-content li[data-list="bullet"] {
+  list-style-type: disc;
+}
+
+.template-chat-content li[data-list="ordered"] {
+  list-style-type: decimal;
+}
+
+.template-chat-content li[data-list="checked"],
+.template-chat-content li[data-list="unchecked"] {
+  list-style-type: none;
 }

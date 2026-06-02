@@ -1,7 +1,8 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import TextareaAutosize from "react-textarea-autosize";
 import KeywordTagInput from "../components/KeywordTagInput";
+import TemplateChatEditor from "../components/TemplateChatEditor";
 import { useEditArticle } from "../hooks/useEditArticle";
 import { useToast } from "../hooks/useToast";
 import { ARTICLE_MESSAGES } from "../lib/articleConstants";
@@ -18,15 +19,6 @@ const LOG_TYPES = [
   { value: "Other", label: "Lainnya" },
 ];
 
-const AVAILABLE_VARIABLES = [
-  { name: "nama_pelanggan", display: "Nama Pelanggan" },
-  { name: "tanggal", display: "Tanggal" },
-  { name: "nomor_tiket", display: "Nomor Tiket" },
-  { name: "sapaan", display: "Sapaan (Bapak/Ibu)" },
-  { name: "produk", display: "Produk" },
-  { name: "status", display: "Status" },
-];
-
 const createEmptyStep = () => ({
   id: `client-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   judulPenanganan: "",
@@ -35,112 +27,6 @@ const createEmptyStep = () => ({
 });
 
 const getStepKey = (step, index) => step?._id || step?.id || `step-${index}`;
-
-function TextareaWithVariables({
-  id,
-  value,
-  onChange,
-  placeholder,
-  label,
-  isVariableMenuOpen,
-  onToggleVariableMenu,
-  onCloseVariableMenu,
-}) {
-  const textareaRef = useRef(null);
-  const lineNumbersRef = useRef(null);
-  const safeValue = value || "";
-  const lineNumbers = Array.from(
-    { length: Math.max(safeValue.split(/\r\n|\r|\n/).length, 1) },
-    (_, index) => index + 1,
-  );
-
-  const handleTemplateScroll = () => {
-    if (!textareaRef.current || !lineNumbersRef.current) return;
-
-    lineNumbersRef.current.style.transform = `translateY(-${textareaRef.current.scrollTop}px)`;
-  };
-
-  const insertVariable = (variable) => {
-    const textarea = textareaRef.current;
-
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const variableText = `{{${variable}}}`;
-    const newText = safeValue.slice(0, start) + variableText + safeValue.slice(end);
-    const newCursorPosition = start + variableText.length;
-
-    onChange(newText);
-    onCloseVariableMenu(id);
-
-    window.setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(newCursorPosition, newCursorPosition);
-    }, 0);
-  };
-
-  return (
-    <div className="relative">
-      <label className="mb-2 block text-sm font-semibold text-slate-900 dark:text-slate-100">{label}</label>
-      <div className="relative overflow-hidden rounded-lg border border-slate-300 bg-white transition focus-within:ring-2 focus-within:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950">
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-12 overflow-hidden border-r border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
-          <div
-            ref={lineNumbersRef}
-            className="px-2 py-3 text-right font-mono text-xs leading-6 text-slate-400"
-          >
-            {lineNumbers.map((lineNumber) => (
-              <div key={lineNumber} className="h-6">
-                {lineNumber}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <textarea
-          id={id}
-          ref={textareaRef}
-          value={safeValue}
-          onChange={(event) => onChange(event.target.value)}
-          onScroll={handleTemplateScroll}
-          placeholder={placeholder}
-          rows={5}
-          className="block w-full resize-y border-0 bg-transparent py-3 pl-14 pr-16 font-mono text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-500"
-        />
-
-        <button
-          type="button"
-          onClick={() => onToggleVariableMenu(id)}
-          className="absolute bottom-3 right-3 rounded bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-          title="Insert variable"
-        >
-          @var
-        </button>
-
-        {isVariableMenuOpen && (
-          <div className="absolute bottom-12 right-0 z-10 min-w-max rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-800 dark:bg-slate-900">
-            {AVAILABLE_VARIABLES.map((variable) => (
-              <button
-                key={variable.name}
-                type="button"
-                onClick={() => insertVariable(variable.name)}
-                className="block w-full rounded px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-indigo-50 dark:text-slate-200 dark:hover:bg-indigo-500/15"
-              >
-                <span className="font-mono text-indigo-600">
-                  {"{{"}{variable.name}{"}}"}
-                </span>
-                <span className="ml-2 text-slate-500 dark:text-slate-400">({variable.display})</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-        Klik @var untuk menambahkan variabel otomatis
-      </p>
-    </div>
-  );
-}
 
 export default function EditPage() {
   const { id } = useParams();
@@ -446,15 +332,13 @@ export default function EditPage() {
                           </p>
                         </div>
 
-                        <TextareaWithVariables
+                        <TemplateChatEditor
                           id={textareaId}
                           value={step.templateChat || ""}
                           onChange={(value) =>
                             handlePenangananChange(index, "templateChat", value)
                           }
-                          placeholder={
-                            "Masukkan template chat (plain text)\nGunakan {{variabel}} untuk placeholder"
-                          }
+                          placeholder="Masukkan template chat. Gunakan toolbar untuk numbering/bullet dan {{variabel}} untuk placeholder."
                           label="Template Chat"
                           isVariableMenuOpen={Boolean(showVariableMenu[textareaId])}
                           onToggleVariableMenu={handleToggleVariableMenu}

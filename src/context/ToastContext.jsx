@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { ToastContext } from "./toastContext";
 
-const TOAST_DURATION_MS = 2000;
+const TOAST_DURATION_MS = 3000;
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
