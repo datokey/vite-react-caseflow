@@ -12,7 +12,7 @@ const RichTextEditor = ({ value, onChange, onError, placeholder }) => {
     editorProps: {
       attributes: {
         class:
-          "article-content min-h-[22rem] w-full px-4 py-4 text-slate-700 outline-none md:px-5",
+          "article-content min-h-[22rem] w-full px-4 py-4 text-slate-700 outline-none md:px-5 dark:text-slate-200",
       },
     },
     onUpdate({ editor: currentEditor }) {
@@ -32,7 +32,7 @@ const RichTextEditor = ({ value, onChange, onError, placeholder }) => {
   }, [editor, value]);
 
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-xs focus-within:ring-2 focus-within:ring-indigo-500">
+    <div className="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-xs focus-within:ring-2 focus-within:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950">
       <EditorToolbar editor={editor} onImageError={onError} />
       <EditorContent editor={editor} />
     </div>

@@ -73,11 +73,11 @@ function TextareaWithVariables({
 
   return (
     <div className="relative">
-      <label className="block text-sm font-semibold text-slate-900 mb-2">
+      <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">
         {label}
       </label>
-      <div className="relative overflow-hidden rounded-lg border border-slate-300 bg-white transition focus-within:ring-2 focus-within:ring-indigo-500">
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-12 overflow-hidden border-r border-slate-200 bg-slate-50">
+      <div className="relative overflow-hidden rounded-lg border border-slate-300 bg-white transition focus-within:ring-2 focus-within:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950">
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-12 overflow-hidden border-r border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
           <div
             ref={lineNumbersRef}
             className="px-2 py-3 text-right font-mono text-xs leading-6 text-slate-400"
@@ -97,30 +97,30 @@ function TextareaWithVariables({
           onScroll={handleTemplateScroll}
           placeholder={placeholder}
           rows={5}
-          className="block w-full resize-y border-0 bg-transparent py-3 pl-14 pr-16 font-mono text-sm leading-6 outline-none"
+          className="block w-full resize-y border-0 bg-transparent py-3 pl-14 pr-16 font-mono text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-500"
         />
         <button
           type="button"
           onClick={() => onToggleVariableMenu(id)}
-          className="absolute bottom-3 right-3 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition"
+          className="absolute bottom-3 right-3 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
           title="Insert variable"
         >
           @var
         </button>
 
         {isVariableMenuOpen && (
-          <div className="absolute bottom-12 right-0 z-10 bg-white border border-slate-200 rounded-lg shadow-lg p-2 min-w-max">
+          <div className="absolute bottom-12 right-0 z-10 bg-white border border-slate-200 rounded-lg shadow-lg p-2 min-w-max dark:border-slate-800 dark:bg-slate-900">
             {AVAILABLE_VARIABLES.map((variable) => (
               <button
                 key={variable.name}
                 type="button"
                 onClick={() => insertVariable(variable.name)}
-                className="block w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-indigo-50 rounded transition"
+                className="block w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-indigo-50 rounded transition dark:text-slate-200 dark:hover:bg-indigo-500/15"
               >
                 <span className="font-mono text-indigo-600">
                   {"{{"}{variable.name}{"}}"}
                 </span>
-                <span className="ml-2 text-slate-500">
+                <span className="ml-2 text-slate-500 dark:text-slate-400">
                   ({variable.display})
                 </span>
               </button>
@@ -128,7 +128,7 @@ function TextareaWithVariables({
           </div>
         )}
       </div>
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
         Klik @var untuk menambahkan variabel otomatis
       </p>
     </div>
@@ -348,22 +348,22 @@ export default function AdminSOPPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 dark:bg-slate-950">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-950">Admin SOP</h1>
-          <p className="mt-2 text-slate-600">Kelola panduan operasional dan SOP</p>
+          <h1 className="text-3xl font-bold text-slate-950 dark:text-white">Admin SOP</h1>
+          <p className="mt-2 text-slate-600 dark:text-slate-300">Kelola panduan operasional dan SOP</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Info Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="text-lg font-semibold text-slate-900 mb-4 dark:text-white">
               Informasi Dasar
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-2">
+                <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">
                   Judul SOP
                 </label>
                 <input
@@ -371,19 +371,19 @@ export default function AdminSOPPage() {
                   value={formData.title}
                   onChange={(e) => handleFieldChange("title", e.target.value)}
                   placeholder="Masukkan judul SOP..."
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-2">
+                <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">
                   Jenis Log
                 </label>
                 <select
                   value={formData.jenisLog}
                   onChange={(e) => handleFieldChange("jenisLog", e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                   required
                 >
                   <option value="">Pilih jenis log...</option>
@@ -398,10 +398,10 @@ export default function AdminSOPPage() {
           </div>
 
           {/* Kondisi Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Kondisi</h2>
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="text-lg font-semibold text-slate-900 mb-4 dark:text-white">Kondisi</h2>
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">
+              <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">
                 Daftar Kondisi
               </label>
               <TextareaAutosize
@@ -409,18 +409,18 @@ export default function AdminSOPPage() {
                 onChange={(e) => handleFieldChange("kondisi", e.target.value)}
                 placeholder="Masukkan kondisi (satu per baris)&#10;Contoh:&#10;Pelanggan marah tentang kualitas produk&#10;Delay pengiriman&#10;Kesalahan dalam pesanan"
                 minRows={4}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none text-sm"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500"
               />
-              <p className="mt-2 text-xs text-slate-500">
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                 Setiap baris akan menjadi satu kondisi
               </p>
             </div>
           </div>
 
           {/* Penanganan Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-slate-900">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
                 Tahap Penanganan
               </h2>
               <button
@@ -436,10 +436,10 @@ export default function AdminSOPPage() {
               {formData.penanganan.map((step, index) => (
                 <div
                   key={step.id}
-                  className="border border-slate-200 rounded-lg p-4 bg-slate-50"
+                  className="border border-slate-200 rounded-lg p-4 bg-slate-50 dark:border-slate-800 dark:bg-slate-950"
                 >
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-slate-900">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
                       Tahap {index + 1}
                     </h3>
                     {formData.penanganan.length > 1 && (
@@ -455,7 +455,7 @@ export default function AdminSOPPage() {
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-900 mb-2">
+                      <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">
                         Judul Penanganan
                       </label>
                       <input
@@ -469,13 +469,13 @@ export default function AdminSOPPage() {
                           )
                         }
                         placeholder="Contoh: Tahap 1: Dengarkan dan Pahami"
-                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-slate-900 mb-2">
+                      <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">
                         Instruksi Internal
                       </label>
                       <TextareaAutosize
@@ -489,9 +489,9 @@ export default function AdminSOPPage() {
                         }
                         placeholder="Masukkan instruksi (satu per baris)&#10;Contoh:&#10;Dengarkan keluh kesah pelanggan hingga selesai&#10;Tunjukkan empati&#10;Catat poin-poin penting"
                         minRows={3}
-                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none text-sm"
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
                       />
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                         Setiap baris akan menjadi satu instruksi
                       </p>
                     </div>
@@ -519,10 +519,10 @@ export default function AdminSOPPage() {
           </div>
 
           {/* Keyword Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Keyword</h2>
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="text-lg font-semibold text-slate-900 mb-4 dark:text-white">Keyword</h2>
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">
+              <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">
                 Kata Kunci Pencarian
               </label>
               <KeywordTagInput
@@ -532,7 +532,7 @@ export default function AdminSOPPage() {
                   showToast(message || "Gagal memuat suggestion keyword.", "error")
                 }
               />
-              <p className="mt-2 text-xs text-slate-500">
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                 {isSavingKeyword
                   ? "Menyimpan keyword baru..."
                   : "Pilih lebih dari satu keyword, atau tambahkan keyword baru dari hasil pencarian."}
@@ -541,10 +541,10 @@ export default function AdminSOPPage() {
           </div>
 
           {/* Catatan Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Catatan</h2>
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="text-lg font-semibold text-slate-900 mb-4 dark:text-white">Catatan</h2>
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">
+              <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">
                 Catatan Template
               </label>
               <textarea
@@ -552,7 +552,7 @@ export default function AdminSOPPage() {
                 onChange={(e) => handleFieldChange("catatan", e.target.value)}
                 placeholder={DEFAULT_CATATAN}
                 rows={3}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-y text-sm"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-y text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500"
               />
             </div>
           </div>
@@ -578,7 +578,7 @@ export default function AdminSOPPage() {
                   ],
                 })
               }
-              className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition"
+              className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               Reset
             </button>

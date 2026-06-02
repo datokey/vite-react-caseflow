@@ -82,9 +82,9 @@ function TextareaWithVariables({
 
   return (
     <div className="relative">
-      <label className="mb-2 block text-sm font-semibold text-slate-900">{label}</label>
-      <div className="relative overflow-hidden rounded-lg border border-slate-300 bg-white transition focus-within:ring-2 focus-within:ring-indigo-500">
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-12 overflow-hidden border-r border-slate-200 bg-slate-50">
+      <label className="mb-2 block text-sm font-semibold text-slate-900 dark:text-slate-100">{label}</label>
+      <div className="relative overflow-hidden rounded-lg border border-slate-300 bg-white transition focus-within:ring-2 focus-within:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950">
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-12 overflow-hidden border-r border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
           <div
             ref={lineNumbersRef}
             className="px-2 py-3 text-right font-mono text-xs leading-6 text-slate-400"
@@ -105,37 +105,37 @@ function TextareaWithVariables({
           onScroll={handleTemplateScroll}
           placeholder={placeholder}
           rows={5}
-          className="block w-full resize-y border-0 bg-transparent py-3 pl-14 pr-16 font-mono text-sm leading-6 outline-none"
+          className="block w-full resize-y border-0 bg-transparent py-3 pl-14 pr-16 font-mono text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-500"
         />
 
         <button
           type="button"
           onClick={() => onToggleVariableMenu(id)}
-          className="absolute bottom-3 right-3 rounded bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-200"
+          className="absolute bottom-3 right-3 rounded bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
           title="Insert variable"
         >
           @var
         </button>
 
         {isVariableMenuOpen && (
-          <div className="absolute bottom-12 right-0 z-10 min-w-max rounded-lg border border-slate-200 bg-white p-2 shadow-lg">
+          <div className="absolute bottom-12 right-0 z-10 min-w-max rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-800 dark:bg-slate-900">
             {AVAILABLE_VARIABLES.map((variable) => (
               <button
                 key={variable.name}
                 type="button"
                 onClick={() => insertVariable(variable.name)}
-                className="block w-full rounded px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-indigo-50"
+                className="block w-full rounded px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-indigo-50 dark:text-slate-200 dark:hover:bg-indigo-500/15"
               >
                 <span className="font-mono text-indigo-600">
                   {"{{"}{variable.name}{"}}"}
                 </span>
-                <span className="ml-2 text-slate-500">({variable.display})</span>
+                <span className="ml-2 text-slate-500 dark:text-slate-400">({variable.display})</span>
               </button>
             ))}
           </div>
         )}
       </div>
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
         Klik @var untuk menambahkan variabel otomatis
       </p>
     </div>
@@ -290,7 +290,7 @@ export default function EditPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 px-4 py-8 sm:px-6 lg:px-8 dark:bg-slate-950">
       <div className="mx-auto max-w-4xl">
         <div className="mb-8">
           <button
@@ -303,29 +303,29 @@ export default function EditPage() {
             </svg>
             Kembali
           </button>
-          <h1 className="text-3xl font-bold text-slate-950">Edit SOP</h1>
-          <p className="mt-2 text-slate-600">Perbarui panduan operasional dan SOP</p>
+          <h1 className="text-3xl font-bold text-slate-950 dark:text-white">Edit SOP</h1>
+          <p className="mt-2 text-slate-600 dark:text-slate-300">Perbarui panduan operasional dan SOP</p>
         </div>
 
         {loading && (
-          <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-sm font-semibold text-indigo-600 shadow-sm">
+          <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-sm font-semibold text-indigo-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-indigo-300">
             {ARTICLE_MESSAGES.loadingDetail}
           </div>
         )}
 
         {error && !loading && (
-          <div className="mb-6 rounded-lg border border-rose-200 bg-rose-50 p-6 text-center text-sm font-semibold text-rose-600">
+          <div className="mb-6 rounded-lg border border-rose-200 bg-rose-50 p-6 text-center text-sm font-semibold text-rose-600 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
             {error}
           </div>
         )}
 
         {!loading && !error && (
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-slate-900">Informasi Dasar</h2>
+            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Informasi Dasar</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-900">
+                  <label className="mb-2 block text-sm font-semibold text-slate-900 dark:text-slate-100">
                     Judul SOP
                   </label>
                   <input
@@ -333,19 +333,19 @@ export default function EditPage() {
                     value={formData.title}
                     onChange={(event) => handleTitleChange(event.target.value)}
                     placeholder="Masukkan judul SOP..."
-                    className="w-full rounded-lg border border-slate-300 px-4 py-3 transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-900">
+                  <label className="mb-2 block text-sm font-semibold text-slate-900 dark:text-slate-100">
                     Jenis Log
                   </label>
                   <select
                     value={formData.details?.JenisLog || ""}
                     onChange={(event) => handleDetailsChange("JenisLog", event.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-4 py-3 transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                     required
                   >
                     <option value="">Pilih jenis log...</option>
@@ -359,9 +359,9 @@ export default function EditPage() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-slate-900">Kondisi</h2>
-              <label className="mb-2 block text-sm font-semibold text-slate-900">
+            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Kondisi</h2>
+              <label className="mb-2 block text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Daftar Kondisi
               </label>
               <TextareaAutosize
@@ -369,14 +369,14 @@ export default function EditPage() {
                 onChange={(event) => handleDetailsChange("Kondisi", event.target.value)}
                 placeholder="Masukkan kondisi (satu per baris)"
                 minRows={4}
-                className="w-full resize-none rounded-lg border border-slate-300 px-4 py-3 text-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full resize-none rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500"
               />
-              <p className="mt-2 text-xs text-slate-500">Setiap baris akan menjadi satu kondisi</p>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Setiap baris akan menjadi satu kondisi</p>
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 className="text-lg font-semibold text-slate-900">Tahap Penanganan</h2>
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Tahap Penanganan</h2>
                 <button
                   type="button"
                   onClick={addPenangananStep}
@@ -394,10 +394,10 @@ export default function EditPage() {
                   return (
                     <div
                       key={stepKey}
-                      className="rounded-lg border border-slate-200 bg-slate-50 p-4"
+                      className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950"
                     >
                       <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-sm font-semibold text-slate-900">
+                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
                           Tahap {index + 1}
                         </h3>
                         {penangananSteps.length > 1 && (
@@ -413,7 +413,7 @@ export default function EditPage() {
 
                       <div className="space-y-4">
                         <div>
-                          <label className="mb-2 block text-sm font-semibold text-slate-900">
+                          <label className="mb-2 block text-sm font-semibold text-slate-900 dark:text-slate-100">
                             Judul Penanganan
                           </label>
                           <input
@@ -423,13 +423,13 @@ export default function EditPage() {
                               handlePenangananChange(index, "judulPenanganan", event.target.value)
                             }
                             placeholder="Contoh: Tahap 1: Dengarkan dan Pahami"
-                            className="w-full rounded-lg border border-slate-300 px-4 py-3 transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
                             required
                           />
                         </div>
 
                         <div>
-                          <label className="mb-2 block text-sm font-semibold text-slate-900">
+                          <label className="mb-2 block text-sm font-semibold text-slate-900 dark:text-slate-100">
                             Instruksi Internal
                           </label>
                           <TextareaAutosize
@@ -439,9 +439,9 @@ export default function EditPage() {
                             }
                             placeholder="Masukkan instruksi (satu per baris)"
                             minRows={3}
-                            className="w-full resize-none rounded-lg border border-slate-300 px-4 py-3 text-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="w-full resize-none rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
                           />
-                          <p className="mt-1 text-xs text-slate-500">
+                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                             Setiap baris akan menjadi satu instruksi
                           </p>
                         </div>
@@ -467,9 +467,9 @@ export default function EditPage() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-slate-900">Keyword</h2>
-              <label className="mb-2 block text-sm font-semibold text-slate-900">
+            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Keyword</h2>
+              <label className="mb-2 block text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Kata Kunci Pencarian
               </label>
               <KeywordTagInput
@@ -477,16 +477,16 @@ export default function EditPage() {
                 onChange={handleKeywordChange}
                 onError={handleKeywordSearchError}
               />
-              <p className="mt-2 text-xs text-slate-500">
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                 {isSavingKeyword
                   ? "Menyimpan keyword baru..."
                   : "Pilih lebih dari satu keyword, atau tambahkan keyword baru dari hasil pencarian."}
               </p>
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-slate-900">Catatan</h2>
-              <label className="mb-2 block text-sm font-semibold text-slate-900">
+            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Catatan</h2>
+              <label className="mb-2 block text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Catatan Template
               </label>
               <textarea
@@ -494,7 +494,7 @@ export default function EditPage() {
                 onChange={(event) => handleDetailsChange("Catatan", event.target.value)}
                 placeholder={DEFAULT_CATATAN}
                 rows={3}
-                className="w-full resize-y rounded-lg border border-slate-300 px-4 py-3 text-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full resize-y rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500"
               />
             </div>
 
@@ -502,7 +502,7 @@ export default function EditPage() {
               <button
                 type="button"
                 onClick={goToHome}
-                className="flex-1 rounded-lg border border-slate-300 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="flex-1 rounded-lg border border-slate-300 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 Batal
               </button>

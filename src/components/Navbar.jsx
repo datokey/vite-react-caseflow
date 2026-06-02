@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { useTheme } from "../hooks/useTheme";
 import { useToast } from "../hooks/useToast";
 import Login from "./Login.jsx";
 
@@ -89,9 +90,52 @@ function UserIcon() {
   );
 }
 
+function SunIcon() {
+  return (
+    <svg
+      className="h-5 w-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="m4.93 4.93 1.41 1.41" />
+      <path d="m17.66 17.66 1.41 1.41" />
+      <path d="M2 12h2" />
+      <path d="M20 12h2" />
+      <path d="m6.34 17.66-1.41 1.41" />
+      <path d="m19.07 4.93-1.41 1.41" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg
+      className="h-5 w-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+    </svg>
+  );
+}
+
 const Navbar = () => {
   const navigate = useNavigate();
   const { loading, user, logout } = useAuth();
+  const { isDarkMode, toggleTheme } = useTheme();
   const { showToast } = useToast();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
@@ -141,7 +185,18 @@ const Navbar = () => {
   if (loading) {
     return (
       <nav className="sticky top-0 z-50 h-16 border-b border-slate-200 bg-white/95 px-4 text-sm text-slate-500 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/90 dark:text-slate-400">
-        <div className="mx-auto flex h-full max-w-7xl items-center">Memuat status...</div>
+        <div className="mx-auto flex h-full max-w-7xl items-center justify-between">
+          <span>Memuat status...</span>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={isDarkMode ? "Aktifkan light mode" : "Aktifkan dark mode"}
+            data-testid="theme-toggle-loading"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
+          >
+            {isDarkMode ? <SunIcon /> : <MoonIcon />}
+          </button>
+        </div>
       </nav>
     );
   }
@@ -235,6 +290,17 @@ const Navbar = () => {
           </div>
 
           <div className="hidden items-center gap-2 md:flex">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={isDarkMode ? "Aktifkan light mode" : "Aktifkan dark mode"}
+              data-testid="theme-toggle-desktop"
+              title={isDarkMode ? "Light mode" : "Dark mode"}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white dark:focus:ring-offset-slate-950"
+            >
+              {isDarkMode ? <SunIcon /> : <MoonIcon />}
+            </button>
+
             {user ? (
               <Link
                 to="/cek-me"
@@ -291,6 +357,17 @@ const Navbar = () => {
                 {link.label}
               </NavLink>
             ))}
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={isDarkMode ? "Aktifkan light mode" : "Aktifkan dark mode"}
+              data-testid="theme-toggle-mobile"
+              className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              <span>{isDarkMode ? "Light Mode" : "Dark Mode"}</span>
+              {isDarkMode ? <SunIcon /> : <MoonIcon />}
+            </button>
 
             {user ? (
               <>

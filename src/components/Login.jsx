@@ -40,21 +40,21 @@ const Login = ({ setCloseModal }) => {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-2xl">
-      <h2 className="text-2xl font-bold text-slate-800 mb-2 text-center">Login Akun</h2>
-      <p className="text-sm text-slate-500 text-center mb-6">
+    <div className="max-w-md mx-auto p-6 bg-white rounded-2xl dark:bg-slate-900">
+      <h2 className="text-2xl font-bold text-slate-800 mb-2 text-center dark:text-white">Login Akun</h2>
+      <p className="text-sm text-slate-500 text-center mb-6 dark:text-slate-400">
         Masuk dengan akun yang sudah terdaftar.
       </p>
 
       {error && (
-        <div className="mb-4 p-3 text-sm text-rose-700 bg-rose-50 rounded-xl border border-rose-100">
+        <div className="mb-4 p-3 text-sm text-rose-700 bg-rose-50 rounded-xl border border-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-slate-600 mb-1">
+          <label htmlFor="email" className="block text-sm font-medium text-slate-600 mb-1 dark:text-slate-300">
             Email
           </label>
           <input
@@ -63,14 +63,14 @@ const Login = ({ setCloseModal }) => {
             type="email"
             value={form.email}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
             autoComplete="email"
             required
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-slate-600 mb-1">
+          <label htmlFor="password" className="block text-sm font-medium text-slate-600 mb-1 dark:text-slate-300">
             Password
           </label>
           <input
@@ -79,7 +79,7 @@ const Login = ({ setCloseModal }) => {
             type="password"
             value={form.password}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
             autoComplete="current-password"
             required
           />

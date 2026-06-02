@@ -29,31 +29,31 @@ const ArticleForm = ({
   const [viewMode, setViewMode] = useState(VIEW_MODES.editor);
 
   return (
-    <form onSubmit={onSubmit} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
+    <form onSubmit={onSubmit} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 dark:border-slate-800 dark:bg-slate-900">
       <div className="space-y-6">
         {/* Semua field artikel dikumpulkan di komponen ini agar create dan edit punya UI yang konsisten. */}
         <div>
-          <label className="block text-sm font-semibold text-slate-900 mb-2">Judul SOP</label>
+          <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">Judul SOP</label>
           <input
             type="text"
             name="title"
             value={formData.title}
             onChange={onChangeField}
             placeholder="Masukkan judul SOP..."
-            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+            className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500"
             required
           />
         </div>
 
         <div>
           <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <label className="block text-sm font-semibold text-slate-900">Deskripsi SOP</label>
-            <div className="inline-flex w-full rounded-lg border border-slate-200 bg-slate-50 p-1 sm:w-auto">
+            <label className="block text-sm font-semibold text-slate-900 dark:text-slate-100">Deskripsi SOP</label>
+            <div className="inline-flex w-full rounded-lg border border-slate-200 bg-slate-50 p-1 sm:w-auto dark:border-slate-800 dark:bg-slate-950">
               <button
                 type="button"
                 onClick={() => setViewMode(VIEW_MODES.editor)}
                 className={`flex-1 rounded-md px-3 py-1.5 text-sm font-semibold transition sm:flex-none ${
-                  viewMode === VIEW_MODES.editor ? "bg-white text-indigo-700 shadow-xs" : "text-slate-500 hover:text-slate-800"
+                  viewMode === VIEW_MODES.editor ? "bg-white text-indigo-700 shadow-xs dark:bg-slate-800 dark:text-indigo-200" : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
                 }`}
               >
                 Editor
@@ -62,7 +62,7 @@ const ArticleForm = ({
                 type="button"
                 onClick={() => setViewMode(VIEW_MODES.preview)}
                 className={`flex-1 rounded-md px-3 py-1.5 text-sm font-semibold transition sm:flex-none ${
-                  viewMode === VIEW_MODES.preview ? "bg-white text-indigo-700 shadow-xs" : "text-slate-500 hover:text-slate-800"
+                  viewMode === VIEW_MODES.preview ? "bg-white text-indigo-700 shadow-xs dark:bg-slate-800 dark:text-indigo-200" : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
                 }`}
               >
                 Preview
@@ -82,15 +82,15 @@ const ArticleForm = ({
           )}
         </div>
 
-        <div className="border-t border-slate-200 pt-6">
-          <h3 className="text-sm font-semibold text-slate-900 mb-4">Detail SOP</h3>
+        <div className="border-t border-slate-200 pt-6 dark:border-slate-800">
+          <h3 className="text-sm font-semibold text-slate-900 mb-4 dark:text-slate-100">Detail SOP</h3>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">Jenis Log</label>
+              <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">Jenis Log</label>
               <select
                 value={formData.details?.JenisLog || ""}
                 onChange={(e) => onChangeDetails("JenisLog", e.target.value)}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:border-slate-700 dark:bg-slate-950 dark:text-white"
               >
                 <option value="">Pilih jenis log...</option>
                 <option value="Panduan Operasional">Panduan Operasional</option>
@@ -103,21 +103,21 @@ const ArticleForm = ({
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">Kondisi</label>
+              <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">Kondisi</label>
               <textarea
                 value={formData.details?.Kondisi || ""}
                 onChange={(event) => onChangeKondisi(event.target.value)}
                 placeholder={"Masukkan kondisi (satu per baris)\nContoh:\nPelanggan marah tentang kualitas produk\nDelay pengiriman\nKesalahan dalam pesanan"}
                 rows={4}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-y text-sm"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-y text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500"
               />
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 Setiap baris akan disimpan sebagai satu item pada array Kondisi.
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">Penanganan</label>
+              <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">Penanganan</label>
               {onChangePenanganan && (
                 <PenangananEditor
                   value={formData.details?.Penanganan || []}
@@ -130,7 +130,7 @@ const ArticleForm = ({
                   value={formData.details?.Penanganan || ""}
                   onChange={(e) => onChangeDetails("Penanganan", e.target.value)}
                   placeholder="Masukkan penanganan..."
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500"
                 />
               )}
             </div>
@@ -138,7 +138,7 @@ const ArticleForm = ({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-slate-900 mb-2">Keyword</label>
+          <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">Keyword</label>
           <KeywordTagInput value={formData.keywords} onChange={onChangeKeywords} onError={onKeywordError} />
         </div>
 
@@ -146,7 +146,7 @@ const ArticleForm = ({
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors"
+            className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             {cancelLabel}
           </button>

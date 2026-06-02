@@ -4,8 +4,8 @@ const toolbarButtonBase =
 const getToolbarButtonClass = (isActive) =>
   `${toolbarButtonBase} ${
     isActive
-      ? "border-indigo-200 bg-indigo-50 text-indigo-700"
-      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+      ? "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-200"
+      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-800"
   }`;
 
 const readImageAsDataUrl = (file) =>
@@ -59,7 +59,7 @@ const EditorToolbar = ({ editor, onImageError }) => {
   };
 
   return (
-    <div className="flex flex-wrap gap-2 border-b border-slate-200 bg-slate-50 p-3">
+    <div className="flex flex-wrap gap-2 border-b border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
       <button
         type="button"
         title="Bold"

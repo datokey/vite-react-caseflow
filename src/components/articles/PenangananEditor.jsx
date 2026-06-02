@@ -84,30 +84,30 @@ function TemplateChatTextarea({
         onChange={(event) => onChange(event.target.value)}
         placeholder={"Masukkan template chat (plain text)\nGunakan {{variabel}} untuk placeholder"}
         rows={4}
-        className="w-full px-4 py-3 pr-16 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-y text-sm"
+        className="w-full px-4 py-3 pr-16 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-y text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
       />
       <button
         type="button"
         onClick={() => onToggleVariableMenu(menuKey)}
-        className="absolute bottom-3 right-3 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition"
+        className="absolute bottom-3 right-3 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
         title="Insert variable"
       >
         @var
       </button>
 
       {isVariableMenuOpen && (
-        <div className="absolute bottom-12 right-0 z-10 bg-white border border-slate-200 rounded-lg shadow-lg p-2 min-w-max">
+        <div className="absolute bottom-12 right-0 z-10 bg-white border border-slate-200 rounded-lg shadow-lg p-2 min-w-max dark:border-slate-800 dark:bg-slate-900">
           {AVAILABLE_VARIABLES.map((variable) => (
             <button
               key={variable.name}
               type="button"
               onClick={() => insertVariable(variable.name)}
-              className="block w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-indigo-50 rounded transition"
+              className="block w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-indigo-50 rounded transition dark:text-slate-200 dark:hover:bg-indigo-500/15"
             >
               <span className="font-mono text-indigo-600">
                 {"{{"}{variable.name}{"}}"}
               </span>
-              <span className="ml-2 text-slate-500">({variable.display})</span>
+              <span className="ml-2 text-slate-500 dark:text-slate-400">({variable.display})</span>
             </button>
           ))}
         </div>
@@ -129,9 +129,9 @@ function PenangananStepEditor({
   const menuKey = `${step.clientId}-templateChat`;
 
   return (
-    <div className="space-y-4 border border-slate-200 rounded-lg p-4 bg-slate-50">
+    <div className="space-y-4 border border-slate-200 rounded-lg p-4 bg-slate-50 dark:border-slate-800 dark:bg-slate-950">
       <div className="flex items-center justify-between gap-3">
-        <h4 className="text-sm font-semibold text-slate-900">Tahap {index + 1}</h4>
+        <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Tahap {index + 1}</h4>
         {canRemove && (
           <button
             type="button"
@@ -144,7 +144,7 @@ function PenangananStepEditor({
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-slate-900 mb-2">
+        <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">
           Judul Penanganan
         </label>
         <input
@@ -152,12 +152,12 @@ function PenangananStepEditor({
           value={step.judulPenanganan}
           onChange={(event) => onChangeField("judulPenanganan", event.target.value)}
           placeholder="Contoh: Tahap 1: Dengarkan dan Pahami"
-          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+          className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-slate-900 mb-2">
+        <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">
           Instruksi Internal
         </label>
         <textarea
@@ -165,15 +165,15 @@ function PenangananStepEditor({
           onChange={(event) => onChangeField("instruksiInternal", event.target.value)}
           placeholder="Masukkan instruksi (satu per baris)"
           rows={3}
-          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-y text-sm"
+          className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-y text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
         />
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
           Setiap baris akan menjadi satu instruksi
         </p>
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-slate-900 mb-2">
+        <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">
           Template Chat
         </label>
         <TemplateChatTextarea
@@ -184,7 +184,7 @@ function PenangananStepEditor({
           onToggleVariableMenu={onToggleVariableMenu}
           onCloseVariableMenu={onCloseVariableMenu}
         />
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
           Klik @var untuk menambahkan variabel otomatis
         </p>
       </div>
@@ -257,7 +257,7 @@ export default function PenangananEditor({ value = [], onChange }) {
       <button
         type="button"
         onClick={handleAddStep}
-        className="w-full rounded-lg border border-dashed border-indigo-300 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+        className="w-full rounded-lg border border-dashed border-indigo-300 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/40 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/20"
       >
         + Tambah Tahap Penanganan
       </button>

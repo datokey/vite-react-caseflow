@@ -344,21 +344,21 @@ function SopPreviewCard({ article, isSelected, onSelect }) {
       onClick={onSelect}
       className={`w-full border-l-4 border-y border-r p-4 text-left transition ${
         isSelected
-          ? "border-y-slate-300 border-r-slate-300 bg-slate-100 shadow-sm"
-          : "border-y-slate-200 border-r-slate-200 bg-white hover:bg-slate-50"
+          ? "border-y-slate-300 border-r-slate-300 bg-slate-100 shadow-sm dark:border-y-slate-700 dark:border-r-slate-700 dark:bg-slate-800"
+          : "border-y-slate-200 border-r-slate-200 bg-white hover:bg-slate-50 dark:border-y-slate-800 dark:border-r-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80"
       } rounded-lg`}
       style={{ borderLeftColor: accentColor }}
     >
       <div className="flex min-w-0 flex-col gap-2">
-        <p className="text-xs font-semibold uppercase text-slate-500">{category}</p>
-        <h2 className="line-clamp-2 text-base font-bold leading-snug text-slate-950">
+        <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{category}</p>
+        <h2 className="line-clamp-2 text-base font-bold leading-snug text-slate-950 dark:text-white">
           {article?.title || "Tanpa judul SOP"}
         </h2>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           {conditions.length} kondisi / {handlingSteps.length} penanganan
         </p>
         {keywordLabels.length > 0 && (
-          <p className="line-clamp-1 text-xs text-slate-400">
+          <p className="line-clamp-1 text-xs text-slate-400 dark:text-slate-500">
             {keywordLabels.join(", ")}
           </p>
         )}
@@ -372,18 +372,18 @@ function TemplateChatBox({ template, stepId, copiedStepId, customerName, onCopy 
   const isCopied = copiedStepId === stepId;
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white">
-      <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-semibold text-slate-700">Template chat</p>
+    <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
+        <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Template chat</p>
         <button
           type="button"
           onClick={() => onCopy(filledTemplate, stepId)}
-          className="w-full rounded-lg border border-slate-300 bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 sm:w-auto"
+          className="w-full rounded-lg border border-slate-300 bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 sm:w-auto dark:border-slate-700 dark:bg-indigo-600 dark:hover:bg-indigo-500"
         >
           {isCopied ? "Tersalin" : "Copy"}
         </button>
       </div>
-      <p className="whitespace-pre-wrap px-4 py-4 text-sm leading-6 text-slate-700">
+      <p className="whitespace-pre-wrap px-4 py-4 text-sm leading-6 text-slate-700 dark:text-slate-300">
         {filledTemplate}
       </p>
     </div>
@@ -399,8 +399,8 @@ function TimelineStep({ step, index, copiedStepId, customerName, onCopy }) {
 
       <div className="space-y-4">
         <div>
-          <p className="text-xs font-semibold uppercase text-slate-500">Tahap {index + 1}</p>
-          <h3 className="mt-1 text-lg font-bold leading-tight text-slate-950">{step.title}</h3>
+          <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Tahap {index + 1}</p>
+          <h3 className="mt-1 text-lg font-bold leading-tight text-slate-950 dark:text-white">{step.title}</h3>
         </div>
 
         {step.instructions.length > 0 && (
@@ -408,7 +408,7 @@ function TimelineStep({ step, index, copiedStepId, customerName, onCopy }) {
             {step.instructions.map((instruction, instructionIndex) => (
               <li
                 key={`${step.id}-instruction-${instructionIndex}`}
-                className="flex gap-3 text-sm leading-6 text-slate-700"
+                className="flex gap-3 text-sm leading-6 text-slate-700 dark:text-slate-300"
               >
                 <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
                 <span>{instruction}</span>
@@ -479,7 +479,7 @@ function DetailActionMenu({ isDeleting, onEdit, onRequestDelete }) {
           aria-haspopup="menu"
           aria-expanded={isMenuOpen}
           onClick={() => setIsMenuOpen((currentValue) => !currentValue)}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus:ring-offset-slate-950"
         >
           <svg
             className="h-5 w-5"
@@ -499,7 +499,7 @@ function DetailActionMenu({ isDeleting, onEdit, onRequestDelete }) {
 
         <div
           role="menu"
-          className={`absolute right-0 top-full z-20 mt-2 w-44 rounded-lg border border-slate-200 bg-white p-1 shadow-xl transition-all duration-150 ${
+          className={`absolute right-0 top-full z-20 mt-2 w-44 rounded-lg border border-slate-200 bg-white p-1 shadow-xl transition-all duration-150 dark:border-slate-800 dark:bg-slate-900 ${
             isMenuOpen ? "visible translate-y-0 opacity-100" : "invisible -translate-y-1 opacity-0"
           }`}
         >
@@ -508,7 +508,7 @@ function DetailActionMenu({ isDeleting, onEdit, onRequestDelete }) {
             role="menuitem"
             disabled={isDeleting}
             onClick={handleDeleteClick}
-            className="block w-full rounded-md px-3 py-2 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="block w-full rounded-md px-3 py-2 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 dark:text-rose-300 dark:hover:bg-rose-500/10"
           >
             {isDeleting ? "Menghapus..." : "Hapus"}
           </button>
@@ -539,17 +539,17 @@ function SopWorkspace({
   const accentColor = getCategoryAccent(category);
 
   return (
-    <article className="min-h-[calc(100vh-4rem)] bg-slate-50">
-      <header className="border-b border-slate-200 bg-white px-5 py-5 sm:px-8">
+    <article className="min-h-[calc(100vh-4rem)] bg-slate-50 dark:bg-slate-950">
+      <header className="border-b border-slate-200 bg-white px-5 py-5 sm:px-8 dark:border-slate-800 dark:bg-slate-950">
         <div className="space-y-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
-              <p className="text-sm font-semibold uppercase text-slate-500">{category}</p>
-              <h1 className="mt-2 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">
+              <p className="text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">{category}</p>
+              <h1 className="mt-2 text-2xl font-black leading-tight text-slate-950 sm:text-3xl dark:text-white">
                 {article?.title || "Tanpa judul SOP"}
               </h1>
               {article?.content && (
-                <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
                   {article.content}
                 </p>
               )}
@@ -566,23 +566,23 @@ function SopWorkspace({
 
           <div>
             <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                <dt className="text-xs font-semibold uppercase text-slate-500">Author</dt>
-                <dd className="mt-1 font-semibold text-slate-800">{authorName}</dd>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
+                <dt className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Author</dt>
+                <dd className="mt-1 font-semibold text-slate-800 dark:text-slate-200">{authorName}</dd>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                <dt className="text-xs font-semibold uppercase text-slate-500">Dibuat</dt>
-                <dd className="mt-1 font-semibold text-slate-800">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
+                <dt className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Dibuat</dt>
+                <dd className="mt-1 font-semibold text-slate-800 dark:text-slate-200">
                   {getDisplayDate(article?.createdAt)}
                 </dd>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                <dt className="text-xs font-semibold uppercase text-slate-500">ID SOP</dt>
-                <dd className="mt-1 truncate font-mono text-xs text-slate-700">{sopId || "-"}</dd>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
+                <dt className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">ID SOP</dt>
+                <dd className="mt-1 truncate font-mono text-xs text-slate-700 dark:text-slate-300">{sopId || "-"}</dd>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                <dt className="text-xs font-semibold uppercase text-slate-500">Versi</dt>
-                <dd className="mt-1 font-semibold text-slate-800">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
+                <dt className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Versi</dt>
+                <dd className="mt-1 font-semibold text-slate-800 dark:text-slate-200">
                   {article?.__v ?? "-"}
                 </dd>
               </div>
@@ -592,7 +592,7 @@ function SopWorkspace({
                 {keywordLabels.map((keyword) => (
                   <span
                     key={keyword}
-                    className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700"
+                    className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-200"
                   >
                     {keyword}
                   </span>
@@ -602,25 +602,25 @@ function SopWorkspace({
           </div>
 
           <label className="block w-full xl:max-w-sm">
-            <span className="text-sm font-semibold text-slate-700">Nama pelanggan</span>
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Nama pelanggan</span>
             <input
               type="text"
               value={customerName}
               onChange={(event) => onCustomerNameChange(event.target.value)}
               placeholder={NAME_PLACEHOLDER}
-              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-500/20"
             />
           </label>
         </div>
       </header>
 
       <div className="px-5 py-6 sm:px-8">
-        <section className="border-b border-slate-200 pb-6">
+        <section className="border-b border-slate-200 pb-6 dark:border-slate-800">
           <div
             className="mb-4 border-l-4 pl-4"
             style={{ borderLeftColor: accentColor }}
           >
-            <h2 className="text-lg font-bold text-slate-950">Kondisi</h2>
+            <h2 className="text-lg font-bold text-slate-950 dark:text-white">Kondisi</h2>
           </div>
 
           {conditions.length > 0 ? (
@@ -628,24 +628,24 @@ function SopWorkspace({
               {conditions.map((condition, index) => (
                 <li
                   key={`${getSopId(article)}-condition-${index}`}
-                  className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700"
+                  className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
                 >
                   {condition}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="rounded-lg border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500">
+            <p className="rounded-lg border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
               Belum ada kondisi yang tercatat.
             </p>
           )}
         </section>
 
-        <section className="border-b border-slate-200 py-6">
-          <h2 className="mb-6 text-lg font-bold text-slate-950">Alur Penanganan</h2>
+        <section className="border-b border-slate-200 py-6 dark:border-slate-800">
+          <h2 className="mb-6 text-lg font-bold text-slate-950 dark:text-white">Alur Penanganan</h2>
 
           {handlingSteps.length > 0 ? (
-            <div className="relative ml-4 border-l border-slate-300 pl-8">
+            <div className="relative ml-4 border-l border-slate-300 pl-8 dark:border-slate-700">
               {handlingSteps.map((step, index) => (
                 <TimelineStep
                   key={step.id}
@@ -658,13 +658,13 @@ function SopWorkspace({
               ))}
             </div>
           ) : (
-            <p className="rounded-lg border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500">
+            <p className="rounded-lg border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
               Belum ada alur penanganan yang tercatat.
             </p>
           )}
         </section>
 
-        <section className="mt-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-4 text-amber-950">
+        <section className="mt-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-4 text-amber-950 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
           <h2 className="text-base font-bold">Catatan / Warning</h2>
           {warnings.length > 0 ? (
             <ul className="mt-3 space-y-2">
@@ -687,10 +687,10 @@ function SopWorkspace({
 
 function EmptyWorkspace({ title, message }) {
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-slate-50 px-6 text-center">
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-slate-50 px-6 text-center dark:bg-slate-950">
       <div className="max-w-md">
-        <h1 className="text-2xl font-black text-slate-950">{title}</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-600">{message}</p>
+        <h1 className="text-2xl font-black text-slate-950 dark:text-white">{title}</h1>
+        <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{message}</p>
       </div>
     </div>
   );
@@ -712,10 +712,10 @@ function DeleteConfirmationModal({ article, isDeleting, onCancel, onConfirm }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-sop-title"
-        className="relative z-10 w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-2xl"
+        className="relative z-10 w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
       >
         <div className="flex items-start gap-3">
-          <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
+          <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-300">
             <svg
               className="h-5 w-5"
               viewBox="0 0 24 24"
@@ -733,13 +733,13 @@ function DeleteConfirmationModal({ article, isDeleting, onCancel, onConfirm }) {
           </div>
 
           <div className="min-w-0">
-            <h2 id="delete-sop-title" className="text-lg font-black text-slate-950">
+            <h2 id="delete-sop-title" className="text-lg font-black text-slate-950 dark:text-white">
               Hapus SOP
             </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
+            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
               Apakah Anda yakin ingin menghapus SOP ini?
             </p>
-            <p className="mt-2 truncate text-sm font-semibold text-slate-950">
+            <p className="mt-2 truncate text-sm font-semibold text-slate-950 dark:text-white">
               {article?.title || "Tanpa judul SOP"}
             </p>
           </div>
@@ -750,7 +750,7 @@ function DeleteConfirmationModal({ article, isDeleting, onCancel, onConfirm }) {
             type="button"
             disabled={isDeleting}
             onClick={onCancel}
-            className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             Batal
           </button>
@@ -887,9 +887,9 @@ function HomePage() {
 
   return (
     <>
-      <main className="min-h-[calc(100vh-4rem)] bg-slate-100 text-slate-950 lg:grid lg:grid-cols-[minmax(20rem,35%)_minmax(0,65%)]">
-        <aside className="border-r border-slate-200 bg-white lg:h-[calc(100vh-4rem)] lg:overflow-y-auto">
-          <div className="sticky top-16 z-10 border-b border-slate-200 bg-white p-4 sm:p-5 lg:top-0">
+      <main className="min-h-[calc(100vh-4rem)] bg-slate-100 text-slate-950 lg:grid lg:grid-cols-[minmax(20rem,35%)_minmax(0,65%)] dark:bg-slate-950 dark:text-white">
+        <aside className="border-r border-slate-200 bg-white lg:h-[calc(100vh-4rem)] lg:overflow-y-auto dark:border-slate-800 dark:bg-slate-950">
+          <div className="sticky top-16 z-10 border-b border-slate-200 bg-white p-4 sm:p-5 lg:top-0 dark:border-slate-800 dark:bg-slate-950">
           <label className="block">
             <span className="sr-only">Cari SOP</span>
             <input
@@ -898,26 +898,26 @@ function HomePage() {
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
               placeholder="Cari SOP..."
-              className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-200"
+              className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-indigo-400 dark:focus:bg-slate-900 dark:focus:ring-indigo-500/20"
             />
           </label>
           </div>
 
           <div className="space-y-3 p-4 sm:p-5">
           {isLoadingArticles && (
-            <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-500">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
               {ARTICLE_MESSAGES.loadingList}
             </div>
           )}
 
           {isErrorArticles && (
-            <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">
+            <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
               Gagal memuat data: {errorMsg}
             </div>
           )}
 
           {!isLoadingArticles && !isErrorArticles && filteredArticles.length === 0 && (
-            <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
               {ARTICLE_MESSAGES.emptyList}
             </div>
           )}
@@ -1007,10 +1007,10 @@ const IMPORTANT_LINKS = [
 
 function ImportantLinksPage() {
   return (
-    <main className="min-h-[calc(100vh-4rem)] bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
+    <main className="min-h-[calc(100vh-4rem)] bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8 dark:bg-slate-950 dark:text-white">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6">
-          <p className="text-sm font-semibold uppercase text-indigo-600">Navigasi Cepat</p>
+          <p className="text-sm font-semibold uppercase text-indigo-600 dark:text-indigo-300">Navigasi Cepat</p>
           <h1 className="mt-2 text-3xl font-black">Link Penting</h1>
         </div>
 
@@ -1019,10 +1019,10 @@ function ImportantLinksPage() {
             <Link
               key={link.to}
               to={link.to}
-              className="rounded-lg border border-slate-200 bg-white p-4 transition hover:border-indigo-200 hover:bg-indigo-50/40 hover:shadow-sm"
+              className="rounded-lg border border-slate-200 bg-white p-4 transition hover:border-indigo-200 hover:bg-indigo-50/40 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500/40 dark:hover:bg-indigo-500/10"
             >
-              <h2 className="font-bold text-slate-950">{link.title}</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{link.description}</p>
+              <h2 className="font-bold text-slate-950 dark:text-white">{link.title}</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{link.description}</p>
             </Link>
           ))}
         </div>

@@ -28,10 +28,10 @@ export const ToastProvider = ({ children }) => {
             key={toast.id}
             className={`pointer-events-auto w-full max-w-sm rounded-3xl border px-4 py-3 text-sm font-medium shadow-xl transition duration-200 ${
               toast.variant === "success"
-                ? "bg-emerald-50 text-emerald-800 border-emerald-100"
+                ? "bg-emerald-50 text-emerald-800 border-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200"
                 : toast.variant === "error"
-                ? "bg-rose-50 text-rose-800 border-rose-100"
-                : "bg-slate-900 text-white border-slate-800"
+                ? "bg-rose-50 text-rose-800 border-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"
+                : "bg-slate-900 text-white border-slate-800 dark:bg-white dark:text-slate-950 dark:border-slate-200"
             }`}
           >
             {toast.message}
