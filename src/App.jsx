@@ -273,8 +273,8 @@ const normalizeHandlingSteps = (article) => {
     .filter((step) => step.title || step.instructions.length || step.templateChat);
 };
 
-const getWarnings = (article) =>
-  toTextList(
+const getWarnings = (article) => {
+  const warningSource =
     getFirstValue(article?.details, [
       "Catatan",
       "catatan",
@@ -285,8 +285,21 @@ const getWarnings = (article) =>
       "CatatanWarning",
       "notes",
       "note",
-    ]),
-  );
+    ]) ||
+    getFirstValue(article, [
+      "Catatan",
+      "catatan",
+      "Warning",
+      "warning",
+      "Warnings",
+      "warnings",
+      "CatatanWarning",
+      "notes",
+      "note",
+    ]);
+
+  return toTextList(warningSource);
+};
 
 const fillTemplate = (template, customerName) => {
   const replacement = customerName.trim() || NAME_PLACEHOLDER;
@@ -375,7 +388,7 @@ function SopPreviewCard({ article, isSelected, onSelect }) {
     >
       <div className="flex min-w-0 flex-col gap-2">
         <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{category}</p>
-        <h2 className={`line-clamp-2 text-base font-bold leading-snug ${titleClassName}`}>
+        <h2 className="line-clamp-2 text-base font-bold leading-snug">
           {article?.title || "Tanpa judul SOP"}
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -579,7 +592,7 @@ function SopWorkspace({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
               <p className="text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">{category}</p>
-              <h1 className={`mt-2 text-2xl font-black leading-tight sm:text-3xl ${titleClassName}`}>
+              <h1 className="mt-2 text-2xl font-black leading-tight sm:text-3xl">
                 {article?.title || "Tanpa judul SOP"}
               </h1>
               {article?.content && (

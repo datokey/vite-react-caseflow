@@ -89,6 +89,9 @@ const mapHandlingToForm = (penanganan) => {
 const getCatatanValue = (details = {}) =>
   details.Catatan ?? details.catatan ?? details.Notes ?? details.notes;
 
+const getArticleCatatanValue = (article) =>
+  article?.catatan ?? article?.Catatan ?? getCatatanValue(article?.details);
+
 export const mapArticleKeywords = (article) => {
   const keywords = article?.keyword ?? article?.keywords ?? [];
 
@@ -127,7 +130,7 @@ export const mapArticleToForm = (article) => ({
     Kondisi: Array.isArray(article?.details?.Kondisi)
       ? article.details.Kondisi.join("\n")
       : article?.details?.Kondisi || "",
-    Catatan: getCatatanValue(article?.details) || "Tidak ada catatan pada template ini",
+    Catatan: getArticleCatatanValue(article) || "Tidak ada catatan pada template ini",
     Penanganan: mapHandlingToForm(article?.details?.Penanganan),
   },
 });
