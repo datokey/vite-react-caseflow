@@ -1,8 +1,19 @@
 import { useMemo } from "react";
-import { sanitizeHtml } from "../lib/htmlUtils";
+import { highlightHtml, sanitizeHtml } from "../lib/htmlUtils";
 
-export default function SanitizedHtmlRenderer({ html, className = "" }) {
-  const sanitizedHtml = useMemo(() => sanitizeHtml(html), [html]);
+export default function SanitizedHtmlRenderer({
+  className = "",
+  highlightClassName = "",
+  highlightQuery = "",
+  html,
+}) {
+  const sanitizedHtml = useMemo(
+    () =>
+      highlightQuery.trim()
+        ? highlightHtml(html, highlightQuery, highlightClassName)
+        : sanitizeHtml(html),
+    [highlightClassName, highlightQuery, html],
+  );
 
   if (!sanitizedHtml) return null;
 

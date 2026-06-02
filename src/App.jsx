@@ -10,10 +10,12 @@ import { useAuth } from "./hooks/useAuth";
 import { useArticles } from "./hooks/useArticles";
 import { useToast } from "./hooks/useToast";
 import { ARTICLE_MESSAGES, ARTICLE_ROUTES } from "./lib/articleConstants";
-import { hasHtmlMarkup, htmlToPlainText } from "./lib/htmlUtils";
+import { escapeRegExp, hasHtmlMarkup, htmlToPlainText } from "./lib/htmlUtils";
 import { articleService } from "./services/articleService";
 
 const NAME_PLACEHOLDER = "Nama Pelanggan";
+const SEARCH_HIGHLIGHT_CLASS =
+  "rounded bg-amber-200/80 px-0.5 text-slate-950 ring-1 ring-amber-300/70 dark:bg-sky-400/30 dark:text-sky-50 dark:ring-sky-300/30";
 const TEMPLATE_NAME_PATTERN =
   /\{\{\s*(nama|nama_pelanggan|namaPelanggan|customerName|customer_name|pelanggan)\s*\}\}|\{\s*(nama|nama_pelanggan|namaPelanggan|customerName|customer_name|pelanggan)\s*\}|\[\s*(nama|nama pelanggan|customer name|customerName|customer_name|pelanggan)\s*\]|<<\s*(nama|nama pelanggan|customer name|customerName|customer_name|pelanggan)\s*>>/gi;
 
@@ -367,7 +369,52 @@ const writeClipboardText = async (text) => {
   }
 };
 
-function SopPreviewCard({ article, isSelected, onSelect }) {
+const getHighlightParts = (text, query) => {
+  const value = String(text ?? "");
+  const trimmedQuery = String(query ?? "").trim();
+
+  if (!trimmedQuery) return [{ text: value, isMatch: false }];
+
+  const regex = new RegExp(escapeRegExp(trimmedQuery), "gi");
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(value)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ text: value.slice(lastIndex, match.index), isMatch: false });
+    }
+
+    parts.push({ text: match[0], isMatch: true });
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < value.length) {
+    parts.push({ text: value.slice(lastIndex), isMatch: false });
+  }
+
+  return parts.length ? parts : [{ text: value, isMatch: false }];
+};
+
+function HighlightedText({ className = "", query, text }) {
+  const parts = useMemo(() => getHighlightParts(text, query), [query, text]);
+
+  return (
+    <>
+      {parts.map((part, index) =>
+        part.isMatch ? (
+          <mark key={`${part.text}-${index}`} className={`${SEARCH_HIGHLIGHT_CLASS} ${className}`}>
+            {part.text}
+          </mark>
+        ) : (
+          <span key={`${part.text}-${index}`}>{part.text}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+function SopPreviewCard({ article, isSelected, onSelect, searchQuery }) {
   const category = getCategory(article);
   const conditions = getConditions(article);
   const handlingSteps = normalizeHandlingSteps(article);
@@ -388,15 +435,15 @@ function SopPreviewCard({ article, isSelected, onSelect }) {
     >
       <div className="flex min-w-0 flex-col gap-2">
         <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{category}</p>
-        <h2 className="line-clamp-2 text-base font-bold leading-snug">
-          {article?.title || "Tanpa judul SOP"}
+        <h2 className={`line-clamp-2 text-base font-bold leading-snug ${titleClassName}`}>
+          <HighlightedText text={article?.title || "Tanpa judul SOP"} query={searchQuery} />
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400">
           {conditions.length} kondisi / {handlingSteps.length} penanganan
         </p>
         {keywordLabels.length > 0 && (
           <p className="line-clamp-1 text-xs text-slate-400 dark:text-slate-500">
-            {keywordLabels.join(", ")}
+            <HighlightedText text={keywordLabels.join(", ")} query={searchQuery} />
           </p>
         )}
       </div>
@@ -404,20 +451,20 @@ function SopPreviewCard({ article, isSelected, onSelect }) {
   );
 }
 
-function TemplateChatBox({ template, stepId, copiedStepId, customerName, onCopy }) {
+function TemplateChatBox({ template, stepId, copiedStepId, customerName, onCopy, searchQuery }) {
   const filledTemplate = fillTemplate(template, customerName);
   const copyText = htmlToPlainText(filledTemplate);
   const isCopied = copiedStepId === stepId;
   const shouldRenderHtml = hasHtmlMarkup(filledTemplate);
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
-        <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Template chat</p>
+    <div className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex min-w-0 flex-col gap-3 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
+        <p className="min-w-0 text-sm font-semibold text-slate-700 dark:text-slate-200">Template chat</p>
         <button
           type="button"
           onClick={() => onCopy(copyText, stepId)}
-          className="w-full rounded-lg border border-slate-300 bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 sm:w-auto dark:border-slate-700 dark:bg-indigo-600 dark:hover:bg-indigo-500"
+          className="w-full shrink-0 rounded-lg border border-slate-300 bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 sm:w-auto dark:border-slate-700 dark:bg-indigo-600 dark:hover:bg-indigo-500"
         >
           {isCopied ? "Tersalin" : "Copy"}
         </button>
@@ -425,18 +472,20 @@ function TemplateChatBox({ template, stepId, copiedStepId, customerName, onCopy 
       {shouldRenderHtml ? (
         <SanitizedHtmlRenderer
           html={filledTemplate}
-          className="px-4 py-4 text-sm leading-6"
+          highlightClassName={SEARCH_HIGHLIGHT_CLASS}
+          highlightQuery={searchQuery}
+          className="min-w-0 overflow-x-auto px-4 py-4 text-sm leading-6 break-words [overflow-wrap:anywhere] prose-a:break-all prose-code:break-words prose-pre:max-w-full prose-pre:overflow-x-auto prose-ol:pl-5 prose-ul:pl-5 [&_*]:max-w-full [&_li]:min-w-0 [&_li]:break-words [&_ol]:max-w-full [&_ul]:max-w-full"
         />
       ) : (
-        <p className="whitespace-pre-wrap px-4 py-4 text-sm leading-6 text-slate-700 dark:text-slate-300">
-          {filledTemplate}
+        <p className="min-w-0 overflow-x-auto whitespace-pre-wrap px-4 py-4 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere] dark:text-slate-300">
+          <HighlightedText text={filledTemplate} query={searchQuery} />
         </p>
       )}
     </div>
   );
 }
 
-function TimelineStep({ step, index, copiedStepId, customerName, onCopy }) {
+function TimelineStep({ step, index, copiedStepId, customerName, onCopy, searchQuery }) {
   return (
     <div className="relative pb-8 last:pb-0">
       <div className="absolute -left-[2.15rem] top-0 flex h-7 w-7 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white ring-4 ring-slate-50">
@@ -446,7 +495,9 @@ function TimelineStep({ step, index, copiedStepId, customerName, onCopy }) {
       <div className="space-y-4">
         <div>
           <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Tahap {index + 1}</p>
-          <h3 className="mt-1 text-lg font-bold leading-tight text-slate-950 dark:text-white">{step.title}</h3>
+          <h3 className="mt-1 text-lg font-bold leading-tight text-slate-950 dark:text-white">
+            <HighlightedText text={step.title} query={searchQuery} />
+          </h3>
         </div>
 
         {step.instructions.length > 0 && (
@@ -457,7 +508,9 @@ function TimelineStep({ step, index, copiedStepId, customerName, onCopy }) {
                 className="flex gap-3 text-sm leading-6 text-slate-700 dark:text-slate-300"
               >
                 <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-                <span>{instruction}</span>
+                <span>
+                  <HighlightedText text={instruction} query={searchQuery} />
+                </span>
               </li>
             ))}
           </ul>
@@ -470,6 +523,7 @@ function TimelineStep({ step, index, copiedStepId, customerName, onCopy }) {
             copiedStepId={copiedStepId}
             customerName={customerName}
             onCopy={onCopy}
+            searchQuery={searchQuery}
           />
         )}
       </div>
@@ -574,6 +628,7 @@ function SopWorkspace({
   onCopyTemplate,
   onCustomerNameChange,
   onRequestDelete,
+  searchQuery,
 }) {
   const category = getCategory(article);
   const conditions = getConditions(article);
@@ -592,12 +647,12 @@ function SopWorkspace({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
               <p className="text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">{category}</p>
-              <h1 className="mt-2 text-2xl font-black leading-tight sm:text-3xl">
-                {article?.title || "Tanpa judul SOP"}
+              <h1 className={`mt-2 text-2xl font-black leading-tight sm:text-3xl ${titleClassName}`}>
+                <HighlightedText text={article?.title || "Tanpa judul SOP"} query={searchQuery} />
               </h1>
               {article?.content && (
                 <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-                  {article.content}
+                  <HighlightedText text={article.content} query={searchQuery} />
                 </p>
               )}
             </div>
@@ -641,7 +696,7 @@ function SopWorkspace({
                     key={keyword}
                     className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-200"
                   >
-                    {keyword}
+                    <HighlightedText text={keyword} query={searchQuery} />
                   </span>
                 ))}
               </div>
@@ -677,7 +732,7 @@ function SopWorkspace({
                   key={`${getSopId(article)}-condition-${index}`}
                   className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
                 >
-                  {condition}
+                  <HighlightedText text={condition} query={searchQuery} />
                 </li>
               ))}
             </ul>
@@ -701,6 +756,7 @@ function SopWorkspace({
                   copiedStepId={copiedStepId}
                   customerName={customerName}
                   onCopy={onCopyTemplate}
+                  searchQuery={searchQuery}
                 />
               ))}
             </div>
@@ -717,7 +773,7 @@ function SopWorkspace({
             <ul className="mt-3 space-y-2">
               {warnings.map((warning, index) => (
                 <li key={`${getSopId(article)}-warning-${index}`} className="text-sm leading-6">
-                  {warning}
+                  <HighlightedText text={warning} query={searchQuery} />
                 </li>
               ))}
             </ul>
@@ -834,14 +890,15 @@ function HomePage() {
     () => (Array.isArray(loadedArticles) ? loadedArticles : []),
     [loadedArticles],
   );
+  const searchQuery = searchInput.trim();
 
   const filteredArticles = useMemo(() => {
-    const normalizedSearch = searchInput.trim().toLowerCase();
+    const normalizedSearch = searchQuery.toLowerCase();
 
     if (!normalizedSearch) return articles;
 
     return articles.filter((article) => getSearchableText(article).includes(normalizedSearch));
-  }, [articles, searchInput]);
+  }, [articles, searchQuery]);
 
   const visibleSelectedArticleId = useMemo(() => {
     if (!filteredArticles.length) return "";
@@ -980,6 +1037,7 @@ function HomePage() {
                   article={article}
                   isSelected={sopId === visibleSelectedArticleId}
                   onSelect={() => setSelectedArticleId(sopId)}
+                  searchQuery={searchQuery}
                 />
               );
             })}
@@ -1019,6 +1077,7 @@ function HomePage() {
             onCopyTemplate={handleCopyTemplate}
             onCustomerNameChange={setCustomerName}
             onRequestDelete={() => handleRequestDeleteArticle(selectedArticle)}
+            searchQuery={searchQuery}
           />
         )}
         </section>

@@ -15,6 +15,7 @@ const SANITIZE_CONFIG = {
     "h4",
     "i",
     "li",
+    "mark",
     "ol",
     "p",
     "pre",
@@ -34,6 +35,74 @@ export const sanitizeHtml = (html = "") =>
   DOMPurify.sanitize(String(html || ""), SANITIZE_CONFIG);
 
 export const hasHtmlMarkup = (value = "") => HTML_TAG_PATTERN.test(String(value || ""));
+
+export const escapeRegExp = (value = "") =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+export const highlightHtml = (html = "", query = "", highlightClassName = "") => {
+  const sanitizedHtml = sanitizeHtml(html);
+  const trimmedQuery = String(query || "").trim();
+
+  if (!trimmedQuery || typeof window === "undefined" || !window.DOMParser) {
+    return sanitizedHtml;
+  }
+
+  const regex = new RegExp(escapeRegExp(trimmedQuery), "gi");
+  const documentFragment = new window.DOMParser().parseFromString(
+    `<div>${sanitizedHtml}</div>`,
+    "text/html",
+  );
+  const rootNode = documentFragment.body.firstElementChild;
+  const textNodes = [];
+
+  const collectTextNodes = (node) => {
+    if (node.nodeType === window.Node.TEXT_NODE) {
+      regex.lastIndex = 0;
+
+      if (regex.test(node.nodeValue || "")) {
+        textNodes.push(node);
+      }
+
+      return;
+    }
+
+    if (node.nodeType !== window.Node.ELEMENT_NODE) return;
+
+    Array.from(node.childNodes || []).forEach(collectTextNodes);
+  };
+
+  collectTextNodes(rootNode);
+
+  textNodes.forEach((textNode) => {
+    const text = textNode.nodeValue || "";
+    const fragment = documentFragment.createDocumentFragment();
+    let lastIndex = 0;
+
+    regex.lastIndex = 0;
+
+    text.replace(regex, (match, offset) => {
+      if (offset > lastIndex) {
+        fragment.appendChild(documentFragment.createTextNode(text.slice(lastIndex, offset)));
+      }
+
+      const mark = documentFragment.createElement("mark");
+      mark.className = highlightClassName;
+      mark.textContent = match;
+      fragment.appendChild(mark);
+      lastIndex = offset + match.length;
+
+      return match;
+    });
+
+    if (lastIndex < text.length) {
+      fragment.appendChild(documentFragment.createTextNode(text.slice(lastIndex)));
+    }
+
+    textNode.parentNode?.replaceChild(fragment, textNode);
+  });
+
+  return sanitizeHtml(rootNode?.innerHTML || sanitizedHtml);
+};
 
 const normalizeInlineText = (value) =>
   value.replace(/\u00a0/g, " ").replace(/[ \t]+/g, " ").trim();
