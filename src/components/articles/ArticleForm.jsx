@@ -93,11 +93,11 @@ const ArticleForm = ({
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:border-slate-700 dark:bg-slate-950 dark:text-white"
               >
                 <option value="">Pilih jenis log...</option>
-                <option value="Panduan Operasional">Panduan Operasional</option>
                 <option value="Incident">Incident</option>
                 <option value="Complaint">Complaint</option>
-                <option value="Request">Request</option>
-                <option value="Inquiry">Inquiry</option>
+                <option value="Request">Request</option> 
+                <option value="Inquiry">Inquiry</option> 
+                <option value="Feedback">Feedback</option>
                 <option value="Other">Other</option>
               </select>
             </div>

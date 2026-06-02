@@ -158,6 +158,41 @@ const getDisplayDate = (date) => {
   });
 };
 
+const LOG_TYPE_COLOR_MAP = {
+  incident: "text-red-600 dark:text-red-400",
+  complaint: "text-orange-500 dark:text-orange-400",
+  request: "text-yellow-500 dark:text-yellow-400",
+  inquiry: "text-green-600 dark:text-green-400",
+  feedback: "text-blue-600 dark:text-blue-400",
+  other: "text-gray-500 dark:text-gray-400",
+};
+
+const LOG_TYPE_ACCENT_COLOR_MAP = {
+  incident: "#dc2626",
+  complaint: "#f97316",
+  request: "#eab308",
+  inquiry: "#16a34a",
+  feedback: "#2563eb",
+  other: "#6b7280",
+};
+
+const getLogType = (article) =>
+  toText(
+    getFirstValue(article?.details, ["JenisLog", "jenisLog", "logType"]) ||
+      article?.jenisLog ||
+      article?.logType,
+  ) || "Other";
+
+const getLogTypeTitleClass = (article) => {
+  const typeKey = getLogType(article).trim().toLowerCase();
+  return LOG_TYPE_COLOR_MAP[typeKey] || LOG_TYPE_COLOR_MAP.other;
+};
+
+const getLogTypeAccentColor = (article) => {
+  const typeKey = getLogType(article).trim().toLowerCase();
+  return LOG_TYPE_ACCENT_COLOR_MAP[typeKey] || LOG_TYPE_ACCENT_COLOR_MAP.other;
+};
+
 const getCategory = (article) =>
   toText(
     getFirstValue(article?.details, ["JenisLog", "jenisLog", "kategori", "Kategori"]) ||
@@ -336,7 +371,8 @@ function SopPreviewCard({ article, isSelected, onSelect }) {
   const conditions = getConditions(article);
   const handlingSteps = normalizeHandlingSteps(article);
   const keywordLabels = getKeywordLabels(article);
-  const accentColor = getCategoryAccent(category);
+  const accentColor = getLogTypeAccentColor(article);
+  const titleClassName = getLogTypeTitleClass(article);
 
   return (
     <button
@@ -351,7 +387,7 @@ function SopPreviewCard({ article, isSelected, onSelect }) {
     >
       <div className="flex min-w-0 flex-col gap-2">
         <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{category}</p>
-        <h2 className="line-clamp-2 text-base font-bold leading-snug text-slate-950 dark:text-white">
+        <h2 className={`line-clamp-2 text-base font-bold leading-snug`}>
           {article?.title || "Tanpa judul SOP"}
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -536,7 +572,8 @@ function SopWorkspace({
   const keywordLabels = getKeywordLabels(article);
   const authorName = getAuthorName(article);
   const sopId = getSopId(article);
-  const accentColor = getCategoryAccent(category);
+  const accentColor = getLogTypeAccentColor(article);
+  const titleClassName = getLogTypeTitleClass(article);
 
   return (
     <article className="min-h-[calc(100vh-4rem)] bg-slate-50 dark:bg-slate-950">
@@ -545,7 +582,7 @@ function SopWorkspace({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
               <p className="text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">{category}</p>
-              <h1 className="mt-2 text-2xl font-black leading-tight text-slate-950 sm:text-3xl dark:text-white">
+              <h1 className={`mt-2 text-2xl font-black leading-tight sm:text-3xl`}>
                 {article?.title || "Tanpa judul SOP"}
               </h1>
               {article?.content && (
