@@ -8,6 +8,11 @@ const KEYWORD_ENDPOINTS = {
 
 const DEFAULT_KEYWORD_LIMIT = 10;
 
+const normalizeValue = (value) => value.trim().toLowerCase();
+
+const isDuplicateKeywordError = (error) =>
+  /duplicate|sudah|terdaftar|exists|digunakan/i.test(error?.message || "");
+
 const buildQueryString = (params = {}) => {
   const queryString = new URLSearchParams(params).toString();
   return queryString ? `?${queryString}` : "";
@@ -42,6 +47,17 @@ export const keywordService = {
     return getKeywordsFromResponse(data).map((keyword) => normalizeKeyword(keyword)).filter((keyword) => keyword.label);
   },
 
+  async findKeywordByExactLabel(label) {
+    const normalizedLabel = normalizeValue(label);
+
+    if (!normalizedLabel) {
+      return null;
+    }
+
+    const keywords = await this.searchKeywords(label, { limit: 25 });
+    return keywords.find((keyword) => keyword.value === normalizedLabel) || null;
+  },
+
   async createKeyword(label) {
     const keywordName = label.trim();
 
@@ -49,19 +65,42 @@ export const keywordService = {
       throw new Error("Keyword tidak boleh kosong.");
     }
 
-    const data = await apiRequest(KEYWORD_ENDPOINTS.base, {
-      method: "POST",
-      credentials: "include",
-      body: JSON.stringify({ keyword: keywordName }),
-    });
+    try {
+      const data = await apiRequest(KEYWORD_ENDPOINTS.base, {
+        method: "POST",
+        credentials: "include",
+        body: JSON.stringify({ keyword: keywordName }),
+      });
 
-    return normalizeKeyword(getKeywordFromResponse(data), { label: keywordName, value: keywordName.toLowerCase() });
+      return normalizeKeyword(getKeywordFromResponse(data), { label: keywordName, value: keywordName.toLowerCase() });
+    } catch (error) {
+      if (!isDuplicateKeywordError(error)) {
+        throw error;
+      }
+
+      const keywordFromError = normalizeKeyword(getKeywordFromResponse(error.data), {
+        label: keywordName,
+        value: keywordName.toLowerCase(),
+      });
+
+      if (keywordFromError.id) {
+        return keywordFromError;
+      }
+
+      const existingKeyword = await this.findKeywordByExactLabel(keywordName);
+
+      if (existingKeyword) {
+        return existingKeyword;
+      }
+
+      return normalizeKeyword(keywordName);
+    }
   },
 
   async persistKeywords(keywords) {
     return Promise.all(
       keywords.map((keyword) => {
-        if (keyword.id && !keyword.isNew) {
+        if (!keyword.isNew) {
           return keyword;
         }
 

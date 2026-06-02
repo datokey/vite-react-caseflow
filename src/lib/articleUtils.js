@@ -134,6 +134,7 @@ export const mapArticleToForm = (article) => ({
 
 export const buildArticleSavePayload = (formData) => {
   const penanganan = formData.details?.Penanganan;
+  const catatan = getCatatanValue(formData.details) || "Tidak ada catatan pada template ini";
 
   const penangananArray = mapHandlingToForm(penanganan)
     .map((step) => ({
@@ -151,10 +152,12 @@ export const buildArticleSavePayload = (formData) => {
   return {
     title: formData.title,
     content: formData.content?.trim() || formData.title?.trim() || "",
+    catatan,
     details: {
       JenisLog: formData.details?.JenisLog || "",
       Kondisi: normalizeTextLines(formData.details?.Kondisi),
-      Catatan: getCatatanValue(formData.details) || "Tidak ada catatan pada template ini",
+      catatan,
+      Catatan: catatan,
       Penanganan: penangananArray,
     },
     keyword: formData.keywords.map(toKeywordPayload),

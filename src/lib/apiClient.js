@@ -52,7 +52,10 @@ export const apiRequest = async (endpoint, options = {}) => {
       .filter(Boolean)
       .join(" ");
 
-    throw new Error(message);
+    const requestError = new Error(message);
+    requestError.data = data;
+    requestError.status = response.status;
+    throw requestError;
   }
 
   return data;

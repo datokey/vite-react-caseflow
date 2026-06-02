@@ -175,18 +175,23 @@ export default function AdminSOPPage() {
   };
 
   const handleKeywordChange = async (keywords) => {
+    const newlyAddedKeywords = keywords.filter(
+      (keyword) =>
+        keyword.isNew &&
+        !formData.keyword.some((selectedKeyword) => selectedKeyword.value === keyword.value),
+    );
+
     setFormData((prev) => ({
       ...prev,
       keyword: keywords,
     }));
 
-    const newKeywords = keywords.filter((keyword) => keyword.isNew);
-    if (!newKeywords.length) return;
+    if (!newlyAddedKeywords.length) return;
 
     try {
       setIsSavingKeyword(true);
       const savedKeywords = await Promise.all(
-        newKeywords.map((keyword) => keywordService.createKeyword(keyword.label)),
+        newlyAddedKeywords.map((keyword) => keywordService.createKeyword(keyword.label)),
       );
 
       setFormData((prev) => ({
@@ -412,45 +417,6 @@ export default function AdminSOPPage() {
             </div>
           </div>
 
-          {/* Catatan Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Catatan</h2>
-            <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">
-                Catatan Template
-              </label>
-              <textarea
-                value={formData.catatan}
-                onChange={(e) => handleFieldChange("catatan", e.target.value)}
-                placeholder={DEFAULT_CATATAN}
-                rows={3}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-y text-sm"
-              />
-            </div>
-          </div>
-
-          {/* Keyword Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Keyword</h2>
-            <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">
-                Kata Kunci Pencarian
-              </label>
-              <KeywordTagInput
-                value={formData.keyword}
-                onChange={handleKeywordChange}
-                onError={(message) =>
-                  showToast(message || "Gagal memuat suggestion keyword.", "error")
-                }
-              />
-              <p className="mt-2 text-xs text-slate-500">
-                {isSavingKeyword
-                  ? "Menyimpan keyword baru..."
-                  : "Pilih lebih dari satu keyword, atau tambahkan keyword baru dari hasil pencarian."}
-              </p>
-            </div>
-          </div>
-
           {/* Penanganan Section */}
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
             <div className="flex items-center justify-between mb-4">
@@ -549,6 +515,45 @@ export default function AdminSOPPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Keyword Section */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">Keyword</h2>
+            <div>
+              <label className="block text-sm font-semibold text-slate-900 mb-2">
+                Kata Kunci Pencarian
+              </label>
+              <KeywordTagInput
+                value={formData.keyword}
+                onChange={handleKeywordChange}
+                onError={(message) =>
+                  showToast(message || "Gagal memuat suggestion keyword.", "error")
+                }
+              />
+              <p className="mt-2 text-xs text-slate-500">
+                {isSavingKeyword
+                  ? "Menyimpan keyword baru..."
+                  : "Pilih lebih dari satu keyword, atau tambahkan keyword baru dari hasil pencarian."}
+              </p>
+            </div>
+          </div>
+
+          {/* Catatan Section */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">Catatan</h2>
+            <div>
+              <label className="block text-sm font-semibold text-slate-900 mb-2">
+                Catatan Template
+              </label>
+              <textarea
+                value={formData.catatan}
+                onChange={(e) => handleFieldChange("catatan", e.target.value)}
+                placeholder={DEFAULT_CATATAN}
+                rows={3}
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-y text-sm"
+              />
             </div>
           </div>
 

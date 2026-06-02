@@ -525,7 +525,7 @@ function SopWorkspace({
             </ul>
           ) : (
             <p className="mt-3 text-sm leading-6">
-              Tidak ada catatan atau warning khusus untuk SOP ini.
+              Tidak ada catatan untuk SOP ini.
             </p>
           )}
         </section>
