@@ -9,8 +9,11 @@ export default function CreateArticlePage() {
     formData,
     goToHome,
     handleContentChange,
+    handleDetailsChange,
     handleEditorError,
     handleInputChange,
+    handleKondisiChange,
+    handleKondisiEditorError,
     handleKeywordsChange,
     handleKeywordSearchError,
     handleSave,
@@ -47,9 +50,12 @@ export default function CreateArticlePage() {
             isSaving={isSaving}
             onCancel={goToHome}
             onChangeContent={handleContentChange}
+            onChangeDetails={handleDetailsChange}
             onChangeField={handleInputChange}
             onChangeKeywords={handleKeywordsChange}
+            onChangeKondisi={handleKondisiChange}
             onEditorError={handleEditorError}
+            onKondisiEditorError={handleKondisiEditorError}
             onKeywordError={handleKeywordSearchError}
             onSubmit={handleSave}
             submitLabel="Publikasikan Artikel"

@@ -36,7 +36,14 @@ export const useCreateArticle = () => {
   const debouncedFormData = useDebounce(formData, AUTOSAVE_DELAY_MS);
 
   const hasDraftContent = useMemo(
-    () => Boolean(formData.title || formData.content || formData.keywords.length),
+    () => Boolean(
+      formData.title ||
+      formData.content ||
+      formData.keywords.length ||
+      formData.details?.JenisLog ||
+      formData.details?.Kondisi ||
+      formData.details?.Penanganan
+    ),
     [formData],
   );
 
@@ -77,6 +84,26 @@ export const useCreateArticle = () => {
     }));
   }, []);
 
+  const handleDetailsChange = useCallback((field, value) => {
+    setFormData((currentFormData) => ({
+      ...currentFormData,
+      details: {
+        ...currentFormData.details,
+        [field]: value,
+      },
+    }));
+  }, []);
+
+  const handleKondisiChange = useCallback((content) => {
+    setFormData((currentFormData) => ({
+      ...currentFormData,
+      details: {
+        ...currentFormData.details,
+        Kondisi: content,
+      },
+    }));
+  }, []);
+
   const handleKeywordSearchError = useCallback(
     (message) => {
       showToast(message || "Gagal memuat suggestion keyword.", "error");
@@ -87,6 +114,13 @@ export const useCreateArticle = () => {
   const handleEditorError = useCallback(
     (message) => {
       showToast(message || "Gagal memproses konten artikel.", "error");
+    },
+    [showToast],
+  );
+
+  const handleKondisiEditorError = useCallback(
+    (message) => {
+      showToast(message || "Gagal memproses kondisi.", "error");
     },
     [showToast],
   );
@@ -132,8 +166,11 @@ export const useCreateArticle = () => {
     formData,
     goToHome,
     handleContentChange,
+    handleDetailsChange,
     handleEditorError,
     handleInputChange,
+    handleKondisiChange,
+    handleKondisiEditorError,
     handleKeywordsChange,
     handleKeywordSearchError,
     handleSave,

@@ -73,11 +73,21 @@ export const mapArticleToForm = (article) => ({
   title: article?.title || "",
   content: article?.content || "",
   keywords: mapArticleKeywords(article),
+  details: {
+    JenisLog: article?.details?.JenisLog || "",
+    Kondisi: article?.details?.Kondisi || "",
+    Penanganan: article?.details?.Penanganan || "",
+  },
 });
 
 export const buildArticleSavePayload = (formData) => ({
   title: formData.title,
   content: formData.content,
+  details: {
+    JenisLog: formData.details?.JenisLog || "",
+    Kondisi: formData.details?.Kondisi || "",
+    Penanganan: formData.details?.Penanganan || "",
+  },
   // Beberapa backend memakai nama field berbeda untuk relasi keyword.
   // Payload ini mengirim ID dan object ringkas agar update artikel tetap kompatibel.
   keywordIds: formData.keywords.map(toKeywordId).filter(Boolean),

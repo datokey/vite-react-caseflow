@@ -14,15 +14,19 @@ const ArticleForm = ({
   isSaving,
   onCancel,
   onChangeContent,
+  onChangeDetails,
   onChangeField,
   onChangeKeywords,
+  onChangeKondisi,
   onEditorError,
+  onKondisiEditorError,
   onKeywordError,
   onSubmit,
   submitLabel,
   submittingLabel = "Menyimpan...",
 }) => {
   const [viewMode, setViewMode] = useState(VIEW_MODES.editor);
+  const [kondisiViewMode, setKondisiViewMode] = useState(VIEW_MODES.editor);
 
   return (
     <form onSubmit={onSubmit} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
@@ -76,6 +80,75 @@ const ArticleForm = ({
           ) : (
             <ArticlePreview content={formData.content} />
           )}
+        </div>
+
+        <div className="border-t border-slate-200 pt-6">
+          <h3 className="text-sm font-semibold text-slate-900 mb-4">Detail Artikel</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-900 mb-2">Jenis Log</label>
+              <select
+                value={formData.details?.JenisLog || ""}
+                onChange={(e) => onChangeDetails("JenisLog", e.target.value)}
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+              >
+                <option value="">Pilih jenis log...</option>
+                <option value="Incident">Incident</option>
+                <option value="Complaint">Complaint</option>
+                <option value="Request">Request</option>
+                <option value="Inquiry">Inquiry</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-900 mb-2">Kondisi</label>
+              <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="inline-flex w-full rounded-lg border border-slate-200 bg-slate-50 p-1 sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => setKondisiViewMode(VIEW_MODES.editor)}
+                    className={`flex-1 rounded-md px-3 py-1.5 text-sm font-semibold transition sm:flex-none ${
+                      kondisiViewMode === VIEW_MODES.editor ? "bg-white text-indigo-700 shadow-xs" : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    Editor
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setKondisiViewMode(VIEW_MODES.preview)}
+                    className={`flex-1 rounded-md px-3 py-1.5 text-sm font-semibold transition sm:flex-none ${
+                      kondisiViewMode === VIEW_MODES.preview ? "bg-white text-indigo-700 shadow-xs" : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    Preview
+                  </button>
+                </div>
+              </div>
+
+              {kondisiViewMode === VIEW_MODES.editor ? (
+                <RichTextEditor
+                  value={formData.details?.Kondisi || ""}
+                  onChange={onChangeKondisi}
+                  onError={onKondisiEditorError}
+                  placeholder="Tulis kondisi..."
+                />
+              ) : (
+                <ArticlePreview content={formData.details?.Kondisi || ""} />
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-900 mb-2">Penanganan</label>
+              <input
+                type="text"
+                value={formData.details?.Penanganan || ""}
+                onChange={(e) => onChangeDetails("Penanganan", e.target.value)}
+                placeholder="Masukkan penanganan..."
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+              />
+            </div>
+          </div>
         </div>
 
         <div>

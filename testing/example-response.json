@@ -1,0 +1,68 @@
+{
+  "_id": {
+    "$oid": "6a1e4d6c535c20187d9c8d47"
+  },
+  "title": "Panduan Penanganan Keluhan Pelanggan",
+  "content": "Artikel ini menjelaskan langkah-langkah komprehensif dalam menangani berbagai keluhan pelanggan dengan profesional dan empati. Kami menyediakan pedoman edukasi, teknik komunikasi efektif, dan solusi praktis untuk setiap situasi.",
+  "authorId": {
+    "$oid": "6a0dced5a0bb390605daedab"
+  },
+  "details": {
+    "JenisLog": "Panduan Operasional",
+    "Kondisi": [
+      "Pelanggan marah tentang kualitas produk",
+      "Delay pengiriman",
+      "Kesalahan dalam pesanan"
+    ],
+    "Penanganan": [
+      {
+        "judulPenanganan": "Tahap 1: Dengarkan dan Pahami",
+        "instruksiInternal": [
+          "Dengarkan keluh kesah pelanggan hingga selesai tanpa memotong",
+          "Tunjukkan empati dan pemahaman",
+          "Catat poin-poin penting dari keluhan"
+        ],
+        "templateChat": "Saya memahami frustrasi Anda. Mari kita lihat bagaimana saya bisa membantu menyelesaikan masalah ini dengan cepat.",
+        "_id": {
+          "$oid": "6a1e4d6c535c20187d9c8d48"
+        }
+      },
+      {
+        "judulPenanganan": "Tahap 2: Analisis dan Solusi",
+        "instruksiInternal": [
+          "Identifikasi akar penyebab masalah",
+          "Konsultasi dengan tim terkait jika perlu",
+          "Tawarkan solusi yang sesuai"
+        ],
+        "templateChat": "Setelah menganalisis situasi Anda, kami menawarkan solusi berikut...",
+        "_id": {
+          "$oid": "6a1e4d6c535c20187d9c8d49"
+        }
+      },
+      {
+        "judulPenanganan": "Tahap 3: Implementasi dan Follow-up",
+        "instruksiInternal": [
+          "Eksekusi solusi yang disepakati",
+          "Pantau progress secara berkala",
+          "Hubungi pelanggan untuk konfirmasi kepuasan"
+        ],
+        "templateChat": "Kami telah mengimplementasikan solusi. Mari saya pantau progress untuk memastikan semuanya berjalan lancar.",
+        "_id": {
+          "$oid": "6a1e4d6c535c20187d9c8d4a"
+        }
+      }
+    ]
+  },
+  "keyword": [
+    {
+      "$oid": "6a1e4d6b694f996379aad2e6"
+    },
+    {
+      "$oid": "6a1e4d6b694f996379aad2e7"
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-06-02T03:26:36.834Z"
+  },
+  "__v": 0
+}

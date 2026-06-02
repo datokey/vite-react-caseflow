@@ -84,6 +84,26 @@ export const useEditArticle = (id) => {
     }));
   }, []);
 
+  const handleDetailsChange = useCallback((field, value) => {
+    setFormData((currentFormData) => ({
+      ...currentFormData,
+      details: {
+        ...currentFormData.details,
+        [field]: value,
+      },
+    }));
+  }, []);
+
+  const handleKondisiChange = useCallback((content) => {
+    setFormData((currentFormData) => ({
+      ...currentFormData,
+      details: {
+        ...currentFormData.details,
+        Kondisi: content,
+      },
+    }));
+  }, []);
+
   const handleContentChange = useCallback((content) => {
     setFormData((currentFormData) => ({
       ...currentFormData,
@@ -101,6 +121,13 @@ export const useEditArticle = (id) => {
   const handleEditorError = useCallback(
     (message) => {
       showToast(message || "Gagal memproses konten artikel.", "error");
+    },
+    [showToast],
+  );
+
+  const handleKondisiEditorError = useCallback(
+    (message) => {
+      showToast(message || "Gagal memproses kondisi.", "error");
     },
     [showToast],
   );
@@ -149,8 +176,11 @@ export const useEditArticle = (id) => {
     isSaving,
     goToHome,
     handleContentChange,
+    handleDetailsChange,
     handleEditorError,
     handleInputChange,
+    handleKondisiChange,
+    handleKondisiEditorError,
     handleKeywordsChange,
     handleKeywordSearchError,
     handleSave,

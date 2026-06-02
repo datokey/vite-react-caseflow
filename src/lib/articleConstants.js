@@ -10,6 +10,11 @@ export const EMPTY_ARTICLE_FORM = {
   title: "",
   content: "",
   keywords: [],
+  details: {
+    JenisLog: "",
+    Kondisi: "",
+    Penanganan: "",
+  },
 };
 
 export const ARTICLE_MESSAGES = {
