@@ -146,8 +146,8 @@ export const useEditArticle = (id) => {
     async (event) => {
       event.preventDefault();
 
-      if (!formData.content.trim()) {
-        const message = "Konten artikel wajib diisi.";
+      if (!formData.title.trim() && !formData.content.trim()) {
+        const message = "Judul SOP wajib diisi.";
         setError(message);
         showToast(message, "error");
         return;

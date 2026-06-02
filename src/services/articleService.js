@@ -6,6 +6,19 @@ const ARTICLE_ENDPOINTS = {
     detail: import.meta.env.VITE_ENDPOINT_ARTICLE_DETAIL,
 };
 
+const getArticleDetailEndpoint = (id) => {
+    if (!id) {
+        throw new Error("ID artikel tidak ditemukan.");
+    }
+
+    if (!ARTICLE_ENDPOINTS.detail && !ARTICLE_ENDPOINTS.base) {
+        throw new Error("Endpoint artikel belum dikonfigurasi.");
+    }
+
+    const detailEndpoint = ARTICLE_ENDPOINTS.detail || `${ARTICLE_ENDPOINTS.base}/:id`;
+    return detailEndpoint.replace(":id", id);
+};
+
 const buildQueryString = (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
     return queryString ? `?${queryString}` : "";
@@ -53,7 +66,7 @@ export const articleService = {
      * Mengambil detail satu artikel berdasarkan ID atau Slug
      */
     async getArticleById(id) {
-        const url = ARTICLE_ENDPOINTS.detail.replace(":id", id);
+        const url = getArticleDetailEndpoint(id);
         const data = await apiRequest(url, {
             method: "GET",
             credentials: "include",
@@ -76,11 +89,7 @@ export const articleService = {
      * Menyimpan perubahan artikel beserta relasi keyword yang dipilih user.
      */
     async saveArticleChanges(id, payload) {
-        if (!id) {
-            throw new Error("ID artikel tidak ditemukan.");
-        }
-
-        const url = ARTICLE_ENDPOINTS.detail.replace(":id", id);
+        const url = getArticleDetailEndpoint(id);
         const data = await apiRequest(url, {
             method: "PUT",
             credentials: "include",
@@ -88,5 +97,16 @@ export const articleService = {
         });
 
         return getSingleArticleFromResponse(data);
+    },
+    /**
+     * Menghapus artikel/template SOP berdasarkan ID.
+     */
+    async deleteArticle(id) {
+        const url = getArticleDetailEndpoint(id);
+
+        return apiRequest(url, {
+            method: "DELETE",
+            credentials: "include",
+        });
     },
 };

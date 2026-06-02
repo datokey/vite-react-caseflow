@@ -1,257 +1,340 @@
 import { useEffect, useRef, useState } from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useToast } from "../hooks/useToast";
-import { useNavigate } from "react-router-dom";
-
 import Login from "./Login.jsx";
 
-const NAV_LINKS = [
-  { label: "Link Penting", href: "#" },
-  { label: "Kategori", href: "#" },
-  { label: "Update", href: "#" },
-  { label: "Admin SOP", href: "/admin/sop" },
+const PRIMARY_LINKS = [
+  { label: "Beranda", to: "/" }, 
+  { label: "Link Penting", to: "/links" },
+];
+
+const ADMIN_LINKS = [
+  { label: "Buat SOP", to: "/admin/sop" },
+  { label: "Profile", to: "/cek-me" },
 ];
 
 const getDisplayName = (user) => user?.username || user?.name || user?.email || "Pengguna";
 
+const navLinkClass = ({ isActive }) =>
+  [
+    "inline-flex h-10 items-center rounded-lg px-3 text-sm font-semibold transition",
+    "focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 dark:focus:ring-offset-slate-950",
+    isActive
+      ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-200"
+      : "text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white",
+  ].join(" ");
+
+const mobileLinkClass = ({ isActive }) =>
+  [
+    "block rounded-lg px-3 py-2 text-left text-sm font-semibold transition",
+    isActive
+      ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-200"
+      : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800",
+  ].join(" ");
+
+function ChevronIcon({ isOpen }) {
+  return (
+    <svg
+      className={`h-4 w-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+function MenuIcon({ isOpen }) {
+  return (
+    <svg
+      className="h-6 w-6"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {isOpen ? (
+        <path d="M18 6 6 18M6 6l12 12" />
+      ) : (
+        <path d="M4 6h16M4 12h16M4 18h16" />
+      )}
+    </svg>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
 const Navbar = () => {
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-
   const { loading, user, logout } = useAuth();
   const { showToast } = useToast();
-  const profileMenuRef = useRef(null);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const adminMenuRef = useRef(null);
 
-  const closeMenu = () => setIsOpen(false);
-  const closeProfileMenu = () => setIsProfileOpen(false);
+  const closeMenus = () => {
+    setIsMobileOpen(false);
+    setIsAdminOpen(false);
+  };
 
   const openLogin = () => {
-    closeMenu();
-    closeProfileMenu();
+    closeMenus();
     setIsLoginOpen(true);
   };
 
   const handleLogout = async () => {
-    closeMenu();
-    closeProfileMenu();
+    closeMenus();
     await logout();
     showToast("Anda berhasil keluar.", "success");
-  };
-
-  const handleProfileClick = () => {
-    closeMenu();
-    closeProfileMenu();
-    navigate("/cek-me");
+    navigate("/");
   };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (isProfileOpen && profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
-        setIsProfileOpen(false);
+      if (adminMenuRef.current && !adminMenuRef.current.contains(event.target)) {
+        setIsAdminOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        closeMenus();
+        setIsLoginOpen(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isProfileOpen]);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
   if (loading) {
     return (
-      <nav className="bg-white border-b border-slate-100 sticky top-0 z-50 px-4 py-4 text-sm text-slate-500">
-        Memuat status . . . .
+      <nav className="sticky top-0 z-50 h-16 border-b border-slate-200 bg-white/95 px-4 text-sm text-slate-500 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/90 dark:text-slate-400">
+        <div className="mx-auto flex h-full max-w-7xl items-center">Memuat status...</div>
       </nav>
     );
   }
 
   return (
     <>
-      <nav className="bg-white border-b border-slate-100 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4 relative">
-          <div className="text-2xl font-bold text-indigo-600 tracking-tight">
-            Nulis<span className="text-slate-800">Kode</span>
-          </div>
+      <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/90">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <Link
+            to="/"
+            onClick={closeMenus}
+            className="inline-flex items-center gap-2 text-xl font-black text-indigo-600 dark:text-indigo-300"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-sm font-black text-white shadow-sm dark:bg-indigo-500">
+              SOP
+            </span>
+            <span className="text-slate-950 dark:text-white">NulisKode</span>
+          </Link>
 
-          <div className="hidden md:flex space-x-8 text-sm font-medium text-slate-600">
-            {NAV_LINKS.map((link) => (
-              link.href.startsWith("/") ? (
-                <button
-                  key={link.label}
-                  onClick={() => navigate(link.href)}
-                  className="hover:text-indigo-600 transition cursor-pointer"
-                >
-                  {link.label}
-                </button>
-              ) : (
-                <a key={link.label} href={link.href} className="hover:text-indigo-600 transition">
-                  {link.label}
-                </a>
-              )
+          <div className="hidden items-center gap-1 md:flex">
+            {PRIMARY_LINKS.map((link) => (
+              <NavLink key={link.to} to={link.to} className={navLinkClass} end={link.to === "/"}>
+                {link.label}
+              </NavLink>
             ))}
-          </div>
-           
-          <div className="flex items-center gap-3">
-            {user ? (
-              <div className="relative" ref={profileMenuRef}>
-                <button
-                  type="button"
-                  aria-label="Buka menu akun"
-                  aria-haspopup="menu"
-                  aria-expanded={isProfileOpen}
-                  onClick={() => setIsProfileOpen((prev) => !prev)}
-                  className="hidden md:inline-flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-white shadow-sm transition hover:bg-indigo-700"
-                >
-                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                </button>
 
-                <button
-                  type="button"
-                  aria-label="Buka menu akun"
-                  aria-haspopup="menu"
-                  aria-expanded={isProfileOpen}
-                  onClick={() => setIsProfileOpen((prev) => !prev)}
-                  className="md:hidden inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition"
-                >
-                  <span className="truncate max-w-xs">{getDisplayName(user)}</span>
-                  <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </button>
-
-                {isProfileOpen && (
-                  <div
-                    role="menu"
-                    className="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl ring-1 ring-slate-200"
-                  >
-                    <div className="border-b border-slate-100 px-4 py-3 text-sm text-slate-700">
-                      Halo, <span className="font-semibold text-slate-900">{getDisplayName(user)}</span>
-                    </div>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={handleProfileClick}
-                      className="w-full px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50 transition"
-                    >
-                      Profile
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={handleLogout}
-                      className="w-full px-4 py-3 text-left text-sm font-semibold text-rose-600 hover:bg-rose-50 transition"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
+            <div className="relative" ref={adminMenuRef}>
               <button
                 type="button"
-                onClick={openLogin}
-                className="hidden md:inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-indigo-700"
+                aria-haspopup="menu"
+                aria-expanded={isAdminOpen}
+                onClick={() => setIsAdminOpen((currentValue) => !currentValue)}
+                className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus:ring-offset-slate-950"
               >
-                Masuk
+                Admin
+                <ChevronIcon isOpen={isAdminOpen} />
               </button>
-            )}
 
-            <button
-              type="button"
-              aria-label="Toggle navigation menu"
-              aria-expanded={isOpen}
-              onClick={() => setIsOpen((prev) => !prev)}
-              className="inline-flex items-center justify-center p-2 rounded-lg text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition md:hidden"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                {isOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              <div
+                role="menu"
+                className={`absolute right-0 top-full mt-2 w-64 rounded-lg border border-slate-200 bg-white p-2 shadow-xl transition-all duration-200 dark:border-slate-800 dark:bg-slate-900 ${
+                  isAdminOpen
+                    ? "visible translate-y-0 opacity-100"
+                    : "invisible -translate-y-2 opacity-0"
+                }`}
+              >
+                {user && (
+                  <div className="mb-1 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                    Masuk sebagai{" "}
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      {getDisplayName(user)}
+                    </span>
+                  </div>
                 )}
-              </svg>
-            </button>
-          </div>
 
-          {isOpen && (
-            <div className="absolute left-4 right-4 top-full mt-2 rounded-3xl bg-white border border-slate-200 shadow-2xl p-4 md:hidden">
-              <div className="flex flex-col gap-3 text-sm font-medium text-slate-700">
-                {NAV_LINKS.map((link) => (
-                  link.href.startsWith("/") ? (
-                    <button
-                      key={link.label}
-                      onClick={() => {
-                        navigate(link.href);
-                        closeMenu();
-                      }}
-                      className="block rounded-xl px-3 py-2 hover:bg-slate-100 transition text-left w-full"
-                    >
-                      {link.label}
-                    </button>
-                  ) : (
-                    <a
-                      key={link.label}
-                      href={link.href}
-                      onClick={closeMenu}
-                      className="block rounded-xl px-3 py-2 hover:bg-slate-100 transition"
-                    >
-                      {link.label}
-                    </a>
-                  )
+                {ADMIN_LINKS.map((link) => (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    role="menuitem"
+                    onClick={closeMenus}
+                    className={mobileLinkClass}
+                  >
+                    {link.label}
+                  </NavLink>
                 ))}
 
+                <div className="my-2 border-t border-slate-100 dark:border-slate-800" />
+
                 {user ? (
-                  <>
-                    <div className="rounded-3xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                      Halo, <span className="font-semibold text-slate-900">{getDisplayName(user)}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleProfileClick}
-                      className="w-full rounded-xl px-3 py-2 text-left hover:bg-slate-100 transition"
-                    >
-                      Profile
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="w-full rounded-xl px-3 py-2 text-left text-rose-600 font-semibold hover:bg-rose-50 transition"
-                    >
-                      Logout
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={handleLogout}
+                    className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10"
+                  >
+                    Logout
+                  </button>
                 ) : (
                   <button
                     type="button"
+                    role="menuitem"
                     onClick={openLogin}
-                    className="w-full rounded-xl bg-indigo-600 px-3 py-2 text-white font-semibold hover:bg-indigo-700 transition"
+                    className="block w-full rounded-lg bg-indigo-600 px-3 py-2 text-left text-sm font-semibold text-white transition hover:bg-indigo-700"
                   >
-                    Masuk
+                    Login
                   </button>
                 )}
               </div>
             </div>
-          )}
+          </div>
+
+          <div className="hidden items-center gap-2 md:flex">
+            {user ? (
+              <Link
+                to="/cek-me"
+                className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                <UserIcon />
+                <span className="max-w-36 truncate">{getDisplayName(user)}</span>
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={openLogin}
+                className="inline-flex h-10 items-center rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200 dark:focus:ring-offset-slate-950"
+              >
+                Login
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            aria-label="Toggle navigation menu"
+            aria-expanded={isMobileOpen}
+            onClick={() => setIsMobileOpen((currentValue) => !currentValue)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 md:hidden dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            <MenuIcon isOpen={isMobileOpen} />
+          </button>
+        </div>
+
+        <div
+          className={`overflow-hidden border-t border-slate-100 bg-white transition-all duration-200 md:hidden dark:border-slate-800 dark:bg-slate-950 ${
+            isMobileOpen ? "max-h-[32rem] opacity-100" : "max-h-0 opacity-0"
+          }`}
+        >
+          <div className="space-y-1 px-4 py-3">
+            {PRIMARY_LINKS.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className={mobileLinkClass}
+                end={link.to === "/"}
+                onClick={closeMenus}
+              >
+                {link.label}
+              </NavLink>
+            ))}
+
+            <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+
+            <p className="px-3 pb-1 text-xs font-bold uppercase text-slate-400">Admin</p>
+            {ADMIN_LINKS.map((link) => (
+              <NavLink key={link.to} to={link.to} className={mobileLinkClass} onClick={closeMenus}>
+                {link.label}
+              </NavLink>
+            ))}
+
+            {user ? (
+              <>
+                <div className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                  Halo, <span className="font-semibold">{getDisplayName(user)}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={openLogin}
+                className="block w-full rounded-lg bg-indigo-600 px-3 py-2 text-left text-sm font-semibold text-white transition hover:bg-indigo-700"
+              >
+                Login
+              </button>
+            )}
+          </div>
         </div>
       </nav>
 
       {isLoginOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="absolute inset-0" onClick={() => setIsLoginOpen(false)}></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+          <button
+            type="button"
+            aria-label="Tutup modal login"
+            className="absolute inset-0"
+            onClick={() => setIsLoginOpen(false)}
+          />
 
-          <div className="relative bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-100 z-10 p-2">
+          <div className="relative z-10 w-full max-w-md rounded-lg border border-slate-100 bg-white p-2 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
             <button
               type="button"
               onClick={() => setIsLoginOpen(false)}
               aria-label="Tutup form login"
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+              className="absolute right-4 top-4 rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
+              <MenuIcon isOpen />
             </button>
 
             <Login setCloseModal={() => setIsLoginOpen(false)} />

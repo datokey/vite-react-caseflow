@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import CreateArticlePage from "./pages/CreateArticlePage";
+import { BrowserRouter, Link, Route, Routes, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import Navbar from "./components/Navbar"; 
 import EditPage from "./pages/EditPage";
 import AdminSOPPage from "./pages/AdminSOPPage";
+import CekMe from "./pages/cekMe";
+import { useAuth } from "./hooks/useAuth";
 import { useArticles } from "./hooks/useArticles";
 import { useToast } from "./hooks/useToast";
-import { ARTICLE_MESSAGES } from "./lib/articleConstants";
+import { ARTICLE_MESSAGES, ARTICLE_ROUTES } from "./lib/articleConstants";
+import { articleService } from "./services/articleService";
 
 const CATEGORY_ACCENTS = [
   "#0ea5e9",
@@ -36,6 +40,49 @@ const toText = (value) => {
   if (typeof unwrappedValue === "number") return String(unwrappedValue);
 
   return "";
+};
+
+const normalizeRoleLabel = (value) => toText(value).toLowerCase().replace(/[\s-]+/g, "_");
+
+const roleValueToText = (value) => {
+  if (!value || typeof value !== "object") return toText(value);
+
+  return (
+    toText(value.role) ||
+    toText(value.name) ||
+    toText(value.value) ||
+    toText(value.title) ||
+    toText(value.label)
+  );
+};
+
+const canManageSop = (user) => {
+  if (!user) return false;
+  if (
+    user.isAdmin ||
+    user.isSuperAdmin ||
+    user.isAdministrator ||
+    user.is_admin ||
+    user.is_super_admin
+  ) {
+    return true;
+  }
+
+  const roleSources = [
+    user.role,
+    user.userRole,
+    user.roleName,
+    user.type,
+    user.accessLevel,
+    ...(Array.isArray(user.roles) ? user.roles : []),
+  ];
+
+  return roleSources
+    .map(roleValueToText)
+    .map(normalizeRoleLabel)
+    .some((role) =>
+      ["admin", "administrator", "super_admin", "superadmin"].includes(role),
+    );
 };
 
 const splitTextList = (value) =>
@@ -384,12 +431,103 @@ function TimelineStep({ step, index, copiedStepId, customerName, onCopy }) {
   );
 }
 
+function DetailActionMenu({ isDeleting, onEdit, onRequestDelete }) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
+
+  const handleDeleteClick = () => {
+    setIsMenuOpen(false);
+    onRequestDelete();
+  };
+
+  return (
+    <div className="flex shrink-0 items-center gap-2">
+      <button
+        type="button"
+        onClick={onEdit}
+        className="inline-flex h-10 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
+      >
+        Edit
+      </button>
+
+      <div className="relative" ref={menuRef}>
+        <button
+          type="button"
+          aria-label="Buka menu aksi SOP"
+          aria-haspopup="menu"
+          aria-expanded={isMenuOpen}
+          onClick={() => setIsMenuOpen((currentValue) => !currentValue)}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2"
+        >
+          <svg
+            className="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="5" r="1" />
+            <circle cx="12" cy="12" r="1" />
+            <circle cx="12" cy="19" r="1" />
+          </svg>
+        </button>
+
+        <div
+          role="menu"
+          className={`absolute right-0 top-full z-20 mt-2 w-44 rounded-lg border border-slate-200 bg-white p-1 shadow-xl transition-all duration-150 ${
+            isMenuOpen ? "visible translate-y-0 opacity-100" : "invisible -translate-y-1 opacity-0"
+          }`}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            disabled={isDeleting}
+            onClick={handleDeleteClick}
+            className="block w-full rounded-md px-3 py-2 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isDeleting ? "Menghapus..." : "Hapus"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SopWorkspace({
   article,
+  canManage,
   copiedStepId,
   customerName,
+  isDeleting,
+  onEdit,
   onCopyTemplate,
   onCustomerNameChange,
+  onRequestDelete,
 }) {
   const category = getCategory(article);
   const conditions = getConditions(article);
@@ -401,19 +539,32 @@ function SopWorkspace({
   const accentColor = getCategoryAccent(category);
 
   return (
-    <article className="min-h-screen bg-slate-50">
+    <article className="min-h-[calc(100vh-4rem)] bg-slate-50">
       <header className="border-b border-slate-200 bg-white px-5 py-5 sm:px-8">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold uppercase text-slate-500">{category}</p>
-            <h1 className="mt-2 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">
-              {article?.title || "Tanpa judul SOP"}
-            </h1>
-            {article?.content && (
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                {article.content}
-              </p>
+        <div className="space-y-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold uppercase text-slate-500">{category}</p>
+              <h1 className="mt-2 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">
+                {article?.title || "Tanpa judul SOP"}
+              </h1>
+              {article?.content && (
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+                  {article.content}
+                </p>
+              )}
+            </div>
+
+            {canManage && (
+              <DetailActionMenu
+                isDeleting={isDeleting}
+                onEdit={onEdit}
+                onRequestDelete={onRequestDelete}
+              />
             )}
+          </div>
+
+          <div>
             <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                 <dt className="text-xs font-semibold uppercase text-slate-500">Author</dt>
@@ -450,7 +601,7 @@ function SopWorkspace({
             )}
           </div>
 
-          <label className="w-full xl:max-w-sm">
+          <label className="block w-full xl:max-w-sm">
             <span className="text-sm font-semibold text-slate-700">Nama pelanggan</span>
             <input
               type="text"
@@ -536,7 +687,7 @@ function SopWorkspace({
 
 function EmptyWorkspace({ title, message }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6 text-center">
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-slate-50 px-6 text-center">
       <div className="max-w-md">
         <h1 className="text-2xl font-black text-slate-950">{title}</h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">{message}</p>
@@ -545,14 +696,92 @@ function EmptyWorkspace({ title, message }) {
   );
 }
 
+function DeleteConfirmationModal({ article, isDeleting, onCancel, onConfirm }) {
+  if (!article) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6 backdrop-blur-sm">
+      <button
+        type="button"
+        aria-label="Batalkan hapus SOP"
+        className="absolute inset-0"
+        onClick={isDeleting ? undefined : onCancel}
+      />
+
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-sop-title"
+        className="relative z-10 w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-2xl"
+      >
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
+            <svg
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 9v4" />
+              <path d="M12 17h.01" />
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+            </svg>
+          </div>
+
+          <div className="min-w-0">
+            <h2 id="delete-sop-title" className="text-lg font-black text-slate-950">
+              Hapus SOP
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Apakah Anda yakin ingin menghapus SOP ini?
+            </p>
+            <p className="mt-2 truncate text-sm font-semibold text-slate-950">
+              {article?.title || "Tanpa judul SOP"}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            disabled={isDeleting}
+            onClick={onCancel}
+            className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            disabled={isDeleting}
+            onClick={onConfirm}
+            className="inline-flex h-10 items-center justify-center rounded-lg bg-rose-600 px-4 text-sm font-bold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-300"
+          >
+            {isDeleting ? "Menghapus..." : "Hapus SOP"}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function HomePage() {
   const { articles: loadedArticles, errorMsg, isErrorArticles, isLoadingArticles } = useArticles();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [searchInput, setSearchInput] = useState("");
   const [selectedArticleId, setSelectedArticleId] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [copiedStepId, setCopiedStepId] = useState("");
+  const [deleteTargetArticle, setDeleteTargetArticle] = useState(null);
+  const [isDeletingArticle, setIsDeletingArticle] = useState(false);
   const searchInputRef = useRef(null);
+  const userCanManageSop = useMemo(() => canManageSop(user), [user]);
 
   const articles = useMemo(
     () => (Array.isArray(loadedArticles) ? loadedArticles : []),
@@ -610,10 +839,57 @@ function HomePage() {
     }
   };
 
+  const handleEditArticle = (article) => {
+    const sopId = getSopId(article);
+
+    if (!sopId) {
+      showToast(ARTICLE_MESSAGES.missingId, "error");
+      return;
+    }
+
+    navigate(ARTICLE_ROUTES.edit(encodeURIComponent(sopId)));
+  };
+
+  const handleRequestDeleteArticle = (article) => {
+    setDeleteTargetArticle(article);
+  };
+
+  const handleCancelDeleteArticle = () => {
+    if (!isDeletingArticle) {
+      setDeleteTargetArticle(null);
+    }
+  };
+
+  const handleConfirmDeleteArticle = async () => {
+    const targetArticle = deleteTargetArticle;
+    const targetId = getSopId(targetArticle);
+
+    if (!targetId) {
+      showToast(ARTICLE_MESSAGES.missingId, "error");
+      return;
+    }
+
+    try {
+      setIsDeletingArticle(true);
+      await articleService.deleteArticle(targetId);
+
+      const nextArticle = filteredArticles.find((article) => getSopId(article) !== targetId);
+      setSelectedArticleId(nextArticle ? getSopId(nextArticle) : "");
+      setDeleteTargetArticle(null);
+      showToast(ARTICLE_MESSAGES.deleteSuccess, "success");
+      await queryClient.invalidateQueries({ queryKey: ["articles"] });
+    } catch (error) {
+      showToast(error?.message || ARTICLE_MESSAGES.deleteFailed, "error");
+    } finally {
+      setIsDeletingArticle(false);
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-950 lg:grid lg:grid-cols-[minmax(20rem,35%)_minmax(0,65%)]">
-      <aside className="border-r border-slate-200 bg-white lg:h-screen lg:overflow-y-auto">
-        <div className="sticky top-0 z-10 border-b border-slate-200 bg-white p-4 sm:p-5">
+    <>
+      <main className="min-h-[calc(100vh-4rem)] bg-slate-100 text-slate-950 lg:grid lg:grid-cols-[minmax(20rem,35%)_minmax(0,65%)]">
+        <aside className="border-r border-slate-200 bg-white lg:h-[calc(100vh-4rem)] lg:overflow-y-auto">
+          <div className="sticky top-16 z-10 border-b border-slate-200 bg-white p-4 sm:p-5 lg:top-0">
           <label className="block">
             <span className="sr-only">Cari SOP</span>
             <input
@@ -625,9 +901,9 @@ function HomePage() {
               className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-200"
             />
           </label>
-        </div>
+          </div>
 
-        <div className="space-y-3 p-4 sm:p-5">
+          <div className="space-y-3 p-4 sm:p-5">
           {isLoadingArticles && (
             <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-500">
               {ARTICLE_MESSAGES.loadingList}
@@ -660,10 +936,10 @@ function HomePage() {
                 />
               );
             })}
-        </div>
-      </aside>
+          </div>
+        </aside>
 
-      <section className="lg:h-screen lg:overflow-y-auto">
+        <section className="lg:h-[calc(100vh-4rem)] lg:overflow-y-auto">
         {isLoadingArticles && (
           <EmptyWorkspace
             title="Memuat SOP"
@@ -688,13 +964,69 @@ function HomePage() {
         {!isLoadingArticles && !isErrorArticles && selectedArticle && (
           <SopWorkspace
             article={selectedArticle}
+            canManage={userCanManageSop}
             copiedStepId={copiedStepId}
             customerName={customerName}
+            isDeleting={isDeletingArticle && getSopId(deleteTargetArticle) === getSopId(selectedArticle)}
+            onEdit={() => handleEditArticle(selectedArticle)}
             onCopyTemplate={handleCopyTemplate}
             onCustomerNameChange={setCustomerName}
+            onRequestDelete={() => handleRequestDeleteArticle(selectedArticle)}
           />
         )}
-      </section>
+        </section>
+      </main>
+
+      <DeleteConfirmationModal
+        article={deleteTargetArticle}
+        isDeleting={isDeletingArticle}
+        onCancel={handleCancelDeleteArticle}
+        onConfirm={handleConfirmDeleteArticle}
+      />
+    </>
+  );
+}
+
+const IMPORTANT_LINKS = [
+  {
+    title: "Buat Template SOP",
+    description: "Buka form pembuatan SOP/template baru.",
+    to: "/admin/sop",
+  },
+  {
+    title: "Dashboard Admin",
+    description: "Kelola template SOP dari halaman admin.",
+    to: "/admin/sop",
+  },
+  {
+    title: "Profile",
+    description: "Lihat status autentikasi dan data akun aktif.",
+    to: "/cek-me",
+  },
+];
+
+function ImportantLinksPage() {
+  return (
+    <main className="min-h-[calc(100vh-4rem)] bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-6">
+          <p className="text-sm font-semibold uppercase text-indigo-600">Navigasi Cepat</p>
+          <h1 className="mt-2 text-3xl font-black">Link Penting</h1>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          {IMPORTANT_LINKS.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className="rounded-lg border border-slate-200 bg-white p-4 transition hover:border-indigo-200 hover:bg-indigo-50/40 hover:shadow-sm"
+            >
+              <h2 className="font-bold text-slate-950">{link.title}</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{link.description}</p>
+            </Link>
+          ))}
+        </div>
+      </div>
     </main>
   );
 }
@@ -702,11 +1034,14 @@ function HomePage() {
 function App() {
   return (
     <BrowserRouter>
+      <Navbar />
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/create" element={<CreateArticlePage />} />
+        <Route path="/" element={<HomePage />} /> 
         <Route path="/edit/:id" element={<EditPage />} />
+        <Route path="/sop/:id/edit" element={<EditPage />} />
         <Route path="/admin/sop" element={<AdminSOPPage />} />
+        <Route path="/cek-me" element={<CekMe />} />
+        <Route path="/links" element={<ImportantLinksPage />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,7 +1,7 @@
 export const ARTICLE_ROUTES = {
   home: "/",
   create: "/create",
-  edit: (id) => `/edit/${id}`,
+  edit: (id) => `/sop/${id}/edit`,
 };
 
 export const ARTICLE_DATE_LOCALE = "id-ID";
@@ -34,6 +34,8 @@ export const ARTICLE_MESSAGES = {
   createSuccess: "Artikel berhasil dibuat!",
   saveFailed: "Gagal menyimpan artikel",
   createFailed: "Gagal membuat artikel",
+  deleteSuccess: "SOP berhasil dihapus.",
+  deleteFailed: "Gagal menghapus SOP.",
   copySuccess: (title) => `Artikel "${title}" berhasil disalin.`,
   copyFailed: "Gagal menyalin teks. Silakan coba lagi.",
 };
