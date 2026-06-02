@@ -2,7 +2,7 @@ import {
   ARTICLE_DATE_LOCALE,
   EMPTY_ARTICLE_FORM,
 } from "./articleConstants";
-import { normalizeKeyword, toKeywordId, toKeywordPayload } from "./keywordUtils";
+import { normalizeKeyword, toKeywordPayload } from "./keywordUtils";
 
 export const getArticleId = (article) => article?._id || article?.id;
 
@@ -25,7 +25,7 @@ export const formatArticleDate = (date, locale = ARTICLE_DATE_LOCALE) => {
 
 const getKeywordText = (keyword) => {
   if (typeof keyword === "string") return keyword;
-  return keyword?.keyword || "";
+  return keyword?.keyword || keyword?.name || keyword?.title || keyword?.label || "";
 };
 
 const getUniqueKeywords = (keywords) => {
@@ -39,6 +39,55 @@ const getUniqueKeywords = (keywords) => {
 
   return Array.from(keywordMap.values());
 };
+
+const normalizeTextLines = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(/\r?\n/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
+const EMPTY_HANDLING_STEP = {
+  judulPenanganan: "",
+  instruksiInternal: "",
+  templateChat: "",
+};
+
+const mapHandlingStepToForm = (step = {}) => ({
+  _id: step?._id || step?.id,
+  judulPenanganan: step?.judulPenanganan || "",
+  instruksiInternal: Array.isArray(step?.instruksiInternal)
+    ? step.instruksiInternal.join("\n")
+    : step?.instruksiInternal || "",
+  templateChat: step?.templateChat || "",
+});
+
+const mapHandlingToForm = (penanganan) => {
+  if (Array.isArray(penanganan) && penanganan.length > 0) {
+    return penanganan.map(mapHandlingStepToForm);
+  }
+
+  if (penanganan && typeof penanganan === "object") {
+    return [mapHandlingStepToForm(penanganan)];
+  }
+
+  if (typeof penanganan === "string" && penanganan.trim()) {
+    return [{ ...EMPTY_HANDLING_STEP, judulPenanganan: penanganan.trim() }];
+  }
+
+  return [{ ...EMPTY_HANDLING_STEP }];
+};
+
+const getCatatanValue = (details = {}) =>
+  details.Catatan ?? details.catatan ?? details.Notes ?? details.notes;
 
 export const mapArticleKeywords = (article) => {
   const keywords = article?.keyword ?? article?.keywords ?? [];
@@ -75,22 +124,39 @@ export const mapArticleToForm = (article) => ({
   keywords: mapArticleKeywords(article),
   details: {
     JenisLog: article?.details?.JenisLog || "",
-    Kondisi: article?.details?.Kondisi || "",
-    Penanganan: article?.details?.Penanganan || "",
+    Kondisi: Array.isArray(article?.details?.Kondisi)
+      ? article.details.Kondisi.join("\n")
+      : article?.details?.Kondisi || "",
+    Catatan: getCatatanValue(article?.details) || "Tidak ada catatan pada template ini",
+    Penanganan: mapHandlingToForm(article?.details?.Penanganan),
   },
 });
 
-export const buildArticleSavePayload = (formData) => ({
-  title: formData.title,
-  content: formData.content,
-  details: {
-    JenisLog: formData.details?.JenisLog || "",
-    Kondisi: formData.details?.Kondisi || "",
-    Penanganan: formData.details?.Penanganan || "",
-  },
-  // Beberapa backend memakai nama field berbeda untuk relasi keyword.
-  // Payload ini mengirim ID dan object ringkas agar update artikel tetap kompatibel.
-  keywordIds: formData.keywords.map(toKeywordId).filter(Boolean),
-  keyword: formData.keywords.map(toKeywordPayload),
-  keywords: formData.keywords.map(toKeywordPayload),
-});
+export const buildArticleSavePayload = (formData) => {
+  const penanganan = formData.details?.Penanganan;
+
+  const penangananArray = mapHandlingToForm(penanganan)
+    .map((step) => ({
+      judulPenanganan: step.judulPenanganan || "",
+      instruksiInternal: normalizeTextLines(step.instruksiInternal),
+      templateChat: step.templateChat || "",
+    }))
+    .filter(
+      (step) =>
+        step.judulPenanganan ||
+        step.instruksiInternal.length > 0 ||
+        step.templateChat,
+    );
+
+  return {
+    title: formData.title,
+    content: formData.content?.trim() || formData.title?.trim() || "",
+    details: {
+      JenisLog: formData.details?.JenisLog || "",
+      Kondisi: normalizeTextLines(formData.details?.Kondisi),
+      Catatan: getCatatanValue(formData.details) || "Tidak ada catatan pada template ini",
+      Penanganan: penangananArray,
+    },
+    keyword: formData.keywords.map(toKeywordPayload),
+  };
+};

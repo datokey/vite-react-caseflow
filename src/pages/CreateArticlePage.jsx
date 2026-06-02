@@ -16,6 +16,7 @@ export default function CreateArticlePage() {
     handleKondisiEditorError,
     handleKeywordsChange,
     handleKeywordSearchError,
+    handlePenangananChange,
     handleSave,
     isSaving,
   } = useCreateArticle();
@@ -36,7 +37,7 @@ export default function CreateArticlePage() {
               </svg>
               Kembali
             </button>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900">Buat Artikel</h1>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900">Buat SOP</h1>
           </div>
 
           {error && (
@@ -54,12 +55,13 @@ export default function CreateArticlePage() {
             onChangeField={handleInputChange}
             onChangeKeywords={handleKeywordsChange}
             onChangeKondisi={handleKondisiChange}
+            onChangePenanganan={handlePenangananChange}
             onEditorError={handleEditorError}
             onKondisiEditorError={handleKondisiEditorError}
             onKeywordError={handleKeywordSearchError}
             onSubmit={handleSave}
-            submitLabel="Publikasikan Artikel"
-            submittingLabel="Mempublikasikan..."
+            submitLabel="Simpan SOP"
+            submittingLabel="Menyimpan SOP..."
           />
         </main>
       </div>

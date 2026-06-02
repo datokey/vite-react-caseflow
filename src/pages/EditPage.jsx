@@ -19,6 +19,7 @@ export default function EditPage() {
     handleKondisiEditorError,
     handleKeywordsChange,
     handleKeywordSearchError,
+    handlePenangananChange,
     handleSave,
     isSaving,
     loading,
@@ -68,6 +69,7 @@ export default function EditPage() {
               onChangeField={handleInputChange}
               onChangeKeywords={handleKeywordsChange}
               onChangeKondisi={handleKondisiChange}
+              onChangePenanganan={handlePenangananChange}
               onEditorError={handleEditorError}
               onKondisiEditorError={handleKondisiEditorError}
               onKeywordError={handleKeywordSearchError}

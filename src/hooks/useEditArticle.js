@@ -104,6 +104,16 @@ export const useEditArticle = (id) => {
     }));
   }, []);
 
+  const handlePenangananChange = useCallback((penanganan) => {
+    setFormData((currentFormData) => ({
+      ...currentFormData,
+      details: {
+        ...currentFormData.details,
+        Penanganan: penanganan,
+      },
+    }));
+  }, []);
+
   const handleContentChange = useCallback((content) => {
     setFormData((currentFormData) => ({
       ...currentFormData,
@@ -183,6 +193,7 @@ export const useEditArticle = (id) => {
     handleKondisiEditorError,
     handleKeywordsChange,
     handleKeywordSearchError,
+    handlePenangananChange,
     handleSave,
   };
 };

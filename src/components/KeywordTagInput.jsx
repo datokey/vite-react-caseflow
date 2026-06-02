@@ -156,7 +156,7 @@ const KeywordTagInput = ({ value, onChange, onError }) => {
               onClick={() => addKeyword(createNewKeywordOption(inputValue))}
               className="block w-full border-t border-slate-100 px-4 py-3 text-left text-sm font-semibold text-indigo-600 transition hover:bg-indigo-50"
             >
-              + Tambahkan "{inputValue.trim()}"
+              ➕ Tambahkan “{inputValue.trim()}”
             </button>
           )}
         </div>

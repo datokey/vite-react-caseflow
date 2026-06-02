@@ -13,7 +13,13 @@ export const EMPTY_ARTICLE_FORM = {
   details: {
     JenisLog: "",
     Kondisi: "",
-    Penanganan: "",
+    Penanganan: [
+      {
+        judulPenanganan: "",
+        instruksiInternal: "",
+        templateChat: "",
+      },
+    ],
   },
 };
 

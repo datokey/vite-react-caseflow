@@ -14,11 +14,11 @@ const buildQueryString = (params = {}) => {
 // Helper function untuk mengekstrak data dari berbagai kemungkinan struktur response backend
 const getArticlesFromResponse = (data) => {
     if (Array.isArray(data)) return data;
-    return data?.articles || data?.data?.articles || data?.data || [];
+    return data?.articles || data?.templateSops || data?.templates || data?.data?.articles || data?.data?.templateSops || data?.data || [];
 };
 const getSingleArticleFromResponse = (data) => {
     if (!data) return null;
-    return data?.article || data?.data?.article || data?.data || data;
+    return data?.article || data?.savedTemplateSop || data?.templateSop || data?.data?.article || data?.data?.savedTemplateSop || data?.data?.templateSop || data?.data || data;
 };
 
 export const articleService = {

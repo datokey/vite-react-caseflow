@@ -40,7 +40,19 @@ export const apiRequest = async (endpoint, options = {}) => {
   const data = await parseResponse(response);
 
   if (!response.ok) {
-    throw new Error(data?.message || data?.error || "Permintaan gagal diproses.");
+    const validationErrors = Array.isArray(data?.errors)
+      ? data.errors
+          .map((error) => {
+            if (typeof error === "string") return error;
+            return error?.message || error?.msg || error?.path || error?.field || "";
+          })
+          .filter(Boolean)
+      : [];
+    const message = [data?.message || data?.error || "Permintaan gagal diproses.", ...validationErrors]
+      .filter(Boolean)
+      .join(" ");
+
+    throw new Error(message);
   }
 
   return data;

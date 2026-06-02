@@ -104,6 +104,16 @@ export const useCreateArticle = () => {
     }));
   }, []);
 
+  const handlePenangananChange = useCallback((penanganan) => {
+    setFormData((currentFormData) => ({
+      ...currentFormData,
+      details: {
+        ...currentFormData.details,
+        Penanganan: penanganan,
+      },
+    }));
+  }, []);
+
   const handleKeywordSearchError = useCallback(
     (message) => {
       showToast(message || "Gagal memuat suggestion keyword.", "error");
@@ -173,6 +183,7 @@ export const useCreateArticle = () => {
     handleKondisiEditorError,
     handleKeywordsChange,
     handleKeywordSearchError,
+    handlePenangananChange,
     handleSave,
     isSaving,
   };

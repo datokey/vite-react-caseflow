@@ -1,68 +1,69 @@
-{
-  "_id": {
-    "$oid": "6a1e4d6c535c20187d9c8d47"
-  },
-  "title": "Panduan Penanganan Keluhan Pelanggan",
-  "content": "Artikel ini menjelaskan langkah-langkah komprehensif dalam menangani berbagai keluhan pelanggan dengan profesional dan empati. Kami menyediakan pedoman edukasi, teknik komunikasi efektif, dan solusi praktis untuk setiap situasi.",
-  "authorId": {
-    "$oid": "6a0dced5a0bb390605daedab"
-  },
-  "details": {
-    "JenisLog": "Panduan Operasional",
-    "Kondisi": [
-      "Pelanggan marah tentang kualitas produk",
-      "Delay pengiriman",
-      "Kesalahan dalam pesanan"
-    ],
-    "Penanganan": [
-      {
-        "judulPenanganan": "Tahap 1: Dengarkan dan Pahami",
-        "instruksiInternal": [
-          "Dengarkan keluh kesah pelanggan hingga selesai tanpa memotong",
-          "Tunjukkan empati dan pemahaman",
-          "Catat poin-poin penting dari keluhan"
-        ],
-        "templateChat": "Saya memahami frustrasi Anda. Mari kita lihat bagaimana saya bisa membantu menyelesaikan masalah ini dengan cepat.",
-        "_id": {
-          "$oid": "6a1e4d6c535c20187d9c8d48"
-        }
-      },
-      {
-        "judulPenanganan": "Tahap 2: Analisis dan Solusi",
-        "instruksiInternal": [
-          "Identifikasi akar penyebab masalah",
-          "Konsultasi dengan tim terkait jika perlu",
-          "Tawarkan solusi yang sesuai"
-        ],
-        "templateChat": "Setelah menganalisis situasi Anda, kami menawarkan solusi berikut...",
-        "_id": {
-          "$oid": "6a1e4d6c535c20187d9c8d49"
-        }
-      },
-      {
-        "judulPenanganan": "Tahap 3: Implementasi dan Follow-up",
-        "instruksiInternal": [
-          "Eksekusi solusi yang disepakati",
-          "Pantau progress secara berkala",
-          "Hubungi pelanggan untuk konfirmasi kepuasan"
-        ],
-        "templateChat": "Kami telah mengimplementasikan solusi. Mari saya pantau progress untuk memastikan semuanya berjalan lancar.",
-        "_id": {
-          "$oid": "6a1e4d6c535c20187d9c8d4a"
-        }
-      }
-    ]
-  },
-  "keyword": [
+[
     {
-      "$oid": "6a1e4d6b694f996379aad2e6"
+    "details": {
+      "JenisLog": "Panduan Operasional",
+      "Kondisi": [
+        "Pelanggan marah tentang kualitas produk",
+        "Delay pengiriman",
+        "Kesalahan dalam pesanan"
+      ],
+      "Penanganan": [
+        {
+          "judulPenanganan": "Tahap 1: Dengarkan dan Pahami",
+          "instruksiInternal": [
+            "Dengarkan keluh kesah pelanggan hingga selesai tanpa memotong",
+            "Tunjukkan empati dan pemahaman",
+            "Catat poin-poin penting dari keluhan"
+          ],
+          "templateChat": "Saya memahami frustrasi Anda. Mari kita lihat bagaimana saya bisa membantu menyelesaikan masalah ini dengan cepat.",
+          "_id": "6a1e6de16e1b09f87b5bbda3"
+        },
+        {
+          "judulPenanganan": "Tahap 2: Analisis dan Solusi",
+          "instruksiInternal": [
+            "Identifikasi akar penyebab masalah",
+            "Konsultasi dengan tim terkait jika perlu",
+            "Tawarkan solusi yang sesuai"
+          ],
+          "templateChat": "Setelah menganalisis situasi Anda, kami menawarkan solusi berikut...",
+          "_id": "6a1e6de16e1b09f87b5bbda4"
+        },
+        {
+          "judulPenanganan": "Tahap 3: Implementasi dan Follow-up",
+          "instruksiInternal": [
+            "Eksekusi solusi yang disepakati",
+            "Pantau progress secara berkala",
+            "Hubungi pelanggan untuk konfirmasi kepuasan"
+          ],
+          "templateChat": "Kami telah mengimplementasikan solusi. Mari saya pantau progress untuk memastikan semuanya berjalan lancar.",
+          "_id": "6a1e6de16e1b09f87b5bbda5"
+        }
+      ]
     },
-    {
-      "$oid": "6a1e4d6b694f996379aad2e7"
-    }
-  ],
-  "createdAt": {
-    "$date": "2026-06-02T03:26:36.834Z"
-  },
-  "__v": 0
-}
+    "_id": "6a1e6de16e1b09f87b5bbda2",
+    "title": "Aplikasi Force close - Panduan Penanganan Keluhan Pelanggan",
+    "content": "SOP untuk menangani keluhan pelanggan ketika aplikasi force close, termasuk validasi kondisi, empati, dan langkah eskalasi.",
+    "authorId": {
+      "_id": "6a0dced5a0bb390605daedab",
+      "username": "Budi Super Admin"
+    },
+    "keyword": [
+      {
+        "_id": "6a1e4d6b694f996379aad2e6",
+        "__v": 0,
+        "createdAt": "2026-06-02T03:26:36.404Z",
+        "keyword": "Customer Service",
+        "updatedAt": "2026-06-02T05:45:05.358Z"
+      },
+      {
+        "_id": "6a1e4d6b694f996379aad2e7",
+        "__v": 0,
+        "createdAt": "2026-06-02T03:26:36.639Z",
+        "keyword": "Complaint Management",
+        "updatedAt": "2026-06-02T05:45:05.422Z"
+      }
+    ],
+    "createdAt": "2026-06-02T05:45:05.486Z",
+    "__v": 0
+  }
+]

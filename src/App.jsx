@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import CreateArticlePage from "./pages/CreateArticlePage";
 import EditPage from "./pages/EditPage";
+import AdminSOPPage from "./pages/AdminSOPPage";
 import { useArticles } from "./hooks/useArticles";
 import { useToast } from "./hooks/useToast";
 import { ARTICLE_MESSAGES } from "./lib/articleConstants";
@@ -70,6 +71,44 @@ const getFirstValue = (source, keys) => {
 const getSopId = (article) => {
   const id = toText(article?._id) || toText(article?.id);
   return id || article?.title || "";
+};
+
+const getAuthorName = (article) =>
+  toText(article?.authorId?.username) ||
+  toText(article?.author?.username) ||
+  toText(article?.authorName) ||
+  toText(article?.authorId) ||
+  "-";
+
+const getKeywordLabels = (article) => {
+  const keywords = article?.keyword ?? article?.keywords ?? [];
+
+  if (typeof keywords === "string") {
+    return keywords
+      .split(",")
+      .map((keyword) => keyword.trim())
+      .filter(Boolean);
+  }
+
+  if (!Array.isArray(keywords)) return [];
+
+  return keywords
+    .map((keyword) => toText(keyword?.keyword) || toText(keyword?.name) || toText(keyword))
+    .filter(Boolean);
+};
+
+const getDisplayDate = (date) => {
+  const rawDate = toText(date);
+  if (!rawDate) return "-";
+
+  const parsedDate = new Date(rawDate);
+  if (Number.isNaN(parsedDate.getTime())) return rawDate;
+
+  return parsedDate.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 };
 
 const getCategory = (article) =>
@@ -188,7 +227,10 @@ const getSearchableText = (article) =>
   [
     article?.title,
     article?.content,
+    getSopId(article),
+    getAuthorName(article),
     getCategory(article),
+    ...getKeywordLabels(article),
     ...getConditions(article),
     ...normalizeHandlingSteps(article).flatMap((step) => [
       step.title,
@@ -246,6 +288,7 @@ function SopPreviewCard({ article, isSelected, onSelect }) {
   const category = getCategory(article);
   const conditions = getConditions(article);
   const handlingSteps = normalizeHandlingSteps(article);
+  const keywordLabels = getKeywordLabels(article);
   const accentColor = getCategoryAccent(category);
 
   return (
@@ -267,6 +310,11 @@ function SopPreviewCard({ article, isSelected, onSelect }) {
         <p className="text-sm text-slate-500">
           {conditions.length} kondisi / {handlingSteps.length} penanganan
         </p>
+        {keywordLabels.length > 0 && (
+          <p className="line-clamp-1 text-xs text-slate-400">
+            {keywordLabels.join(", ")}
+          </p>
+        )}
       </div>
     </button>
   );
@@ -347,6 +395,9 @@ function SopWorkspace({
   const conditions = getConditions(article);
   const handlingSteps = normalizeHandlingSteps(article);
   const warnings = getWarnings(article);
+  const keywordLabels = getKeywordLabels(article);
+  const authorName = getAuthorName(article);
+  const sopId = getSopId(article);
   const accentColor = getCategoryAccent(category);
 
   return (
@@ -362,6 +413,40 @@ function SopWorkspace({
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
                 {article.content}
               </p>
+            )}
+            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <dt className="text-xs font-semibold uppercase text-slate-500">Author</dt>
+                <dd className="mt-1 font-semibold text-slate-800">{authorName}</dd>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <dt className="text-xs font-semibold uppercase text-slate-500">Dibuat</dt>
+                <dd className="mt-1 font-semibold text-slate-800">
+                  {getDisplayDate(article?.createdAt)}
+                </dd>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <dt className="text-xs font-semibold uppercase text-slate-500">ID SOP</dt>
+                <dd className="mt-1 truncate font-mono text-xs text-slate-700">{sopId || "-"}</dd>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <dt className="text-xs font-semibold uppercase text-slate-500">Versi</dt>
+                <dd className="mt-1 font-semibold text-slate-800">
+                  {article?.__v ?? "-"}
+                </dd>
+              </div>
+            </dl>
+            {keywordLabels.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {keywordLabels.map((keyword) => (
+                  <span
+                    key={keyword}
+                    className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700"
+                  >
+                    {keyword}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
 
@@ -621,6 +706,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/create" element={<CreateArticlePage />} />
         <Route path="/edit/:id" element={<EditPage />} />
+        <Route path="/admin/sop" element={<AdminSOPPage />} />
       </Routes>
     </BrowserRouter>
   );

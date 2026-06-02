@@ -8,7 +8,8 @@ import Login from "./Login.jsx";
 const NAV_LINKS = [
   { label: "Link Penting", href: "#" },
   { label: "Kategori", href: "#" },
-  { label: "Update", href: "#" }, 
+  { label: "Update", href: "#" },
+  { label: "Admin SOP", href: "/admin/sop" },
 ];
 
 const getDisplayName = (user) => user?.username || user?.name || user?.email || "Pengguna";
@@ -74,9 +75,19 @@ const Navbar = () => {
 
           <div className="hidden md:flex space-x-8 text-sm font-medium text-slate-600">
             {NAV_LINKS.map((link) => (
-              <a key={link.label} href={link.href} className="hover:text-indigo-600 transition">
-                {link.label}
-              </a>
+              link.href.startsWith("/") ? (
+                <button
+                  key={link.label}
+                  onClick={() => navigate(link.href)}
+                  className="hover:text-indigo-600 transition cursor-pointer"
+                >
+                  {link.label}
+                </button>
+              ) : (
+                <a key={link.label} href={link.href} className="hover:text-indigo-600 transition">
+                  {link.label}
+                </a>
+              )
             ))}
           </div>
            
@@ -169,14 +180,27 @@ const Navbar = () => {
             <div className="absolute left-4 right-4 top-full mt-2 rounded-3xl bg-white border border-slate-200 shadow-2xl p-4 md:hidden">
               <div className="flex flex-col gap-3 text-sm font-medium text-slate-700">
                 {NAV_LINKS.map((link) => (
-                  <a
-                    key={link.label}
-                    href={link.href}
-                    onClick={closeMenu}
-                    className="block rounded-xl px-3 py-2 hover:bg-slate-100 transition"
-                  >
-                    {link.label}
-                  </a>
+                  link.href.startsWith("/") ? (
+                    <button
+                      key={link.label}
+                      onClick={() => {
+                        navigate(link.href);
+                        closeMenu();
+                      }}
+                      className="block rounded-xl px-3 py-2 hover:bg-slate-100 transition text-left w-full"
+                    >
+                      {link.label}
+                    </button>
+                  ) : (
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      onClick={closeMenu}
+                      className="block rounded-xl px-3 py-2 hover:bg-slate-100 transition"
+                    >
+                      {link.label}
+                    </a>
+                  )
                 ))}
 
                 {user ? (
