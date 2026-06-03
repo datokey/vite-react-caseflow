@@ -545,9 +545,9 @@ function SopPreviewCard({ article, isPopular = false, isSelected, onSelect, sear
           </div>
           {isPopular && (
             <span
-              aria-label="SOP populer"
+              aria-label="Case populer"
               className="shrink-0 rounded-full bg-orange-50 px-2 py-1 text-xs leading-none text-orange-600 ring-1 ring-orange-200 dark:bg-orange-500/10 dark:text-orange-200 dark:ring-orange-400/30"
-              title="SOP populer 24 jam terakhir"
+              title="Case populer 24 jam terakhir"
             >
               🔥
             </span>
@@ -1354,7 +1354,7 @@ function AnalyticsSkeleton() {
   );
 }
 
-function SummaryCard({ label, value, helper, tone = "slate" }) {
+function SummaryCard({ label, value, helper, tone = "slate", tooltip }) {
   const toneClassMap = {
     emerald: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200",
     indigo: "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-200",
@@ -1362,12 +1362,29 @@ function SummaryCard({ label, value, helper, tone = "slate" }) {
   };
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <div className="group relative rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <p className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
       <p className="mt-3 text-3xl font-black text-slate-950 dark:text-white">{value}</p>
-      <p className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${toneClassMap[tone]}`}>
+      <p className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${toneClassMap[tone]}`}>
         {helper}
+        {tooltip && (
+          <span
+            aria-label={tooltip}
+            className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-current text-[10px] font-black leading-none opacity-80"
+            tabIndex={0}
+          >
+            ?
+          </span>
+        )}
       </p>
+      {tooltip && (
+        <div
+          role="tooltip"
+          className="pointer-events-none absolute bottom-4 left-5 right-5 z-20 translate-y-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold leading-5 text-slate-600 opacity-0 shadow-lg transition duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+        >
+          {tooltip}
+        </div>
+      )}
     </div>
   );
 }
@@ -1534,6 +1551,7 @@ function AnalyticsDashboard() {
                   value={topChannel.count > 0 ? topChannel.label : "-"}
                   helper={`${topChannel.count} tiket • ${topChannelPercentage}%`}
                   tone="emerald"
+                  tooltip={`Persentase menunjukkan kontribusi ${topChannel.label} dibandingkan total ${totalVolume} tiket pada periode ${period === "daily" ? "hari ini" : "bulan ini"}.`}
                 />
               </div>
 
