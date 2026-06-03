@@ -1,5 +1,6 @@
 import { useState } from "react";
 import TextareaAutosize from "react-textarea-autosize";
+import InternalInstructionEditor from "../components/InternalInstructionEditor";
 import KeywordTagInput from "../components/KeywordTagInput";
 import TemplateChatEditor from "../components/TemplateChatEditor";
 import { articleService } from "../services/articleService";
@@ -7,6 +8,7 @@ import { keywordService } from "../services/keywordService";
 import { useToast } from "../hooks/useToast";
 import { ARTICLE_ROUTES } from "../lib/articleConstants";
 import { buildArticleSavePayload } from "../lib/articleUtils";
+import { htmlToPlainText } from "../lib/htmlUtils";
 
 const DEFAULT_CATATAN = "Tidak ada catatan pada template ini";
 const NAVIGATION_PREFERENCE_KEY = "adminSopNavigationPreference";
@@ -181,7 +183,7 @@ export default function AdminSOPPage() {
       showToast("Kondisi harus diisi minimal satu", "error");
       return false;
     }
-    if (!formData.catatan.trim()) {
+    if (!htmlToPlainText(formData.catatan).trim()) {
       showToast("Catatan tidak boleh kosong", "error");
       return false;
     }
@@ -193,7 +195,7 @@ export default function AdminSOPPage() {
       showToast("Semua tahap penanganan harus memiliki judul", "error");
       return false;
     }
-    if (formData.penanganan.some((p) => !p.instruksiInternal.trim())) {
+    if (formData.penanganan.some((p) => !htmlToPlainText(p.instruksiInternal).trim())) {
       showToast("Semua tahap penanganan harus memiliki instruksi internal", "error");
       return false;
     }
@@ -382,28 +384,18 @@ export default function AdminSOPPage() {
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">
-                        Instruksi Internal
-                      </label>
-                      <TextareaAutosize
-                        value={step.instruksiInternal}
-                        onChange={(e) =>
-                          handlePenangananChange(
-                            step.id,
-                            "instruksiInternal",
-                            e.target.value
-                          )
-                        }
-                        placeholder="Masukkan instruksi (satu per baris)&#10;Contoh:&#10; Kegunaan dan fungsi Privy&#10;Manfaat Privy &#10;Pengguna meminta faktur pajak untuk akun person
- "
-                        minRows={3}
-                        className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
-                      />
-                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                        Setiap baris akan menjadi satu instruksi
-                      </p>
-                    </div>
+                    <InternalInstructionEditor
+                      id={`instruction-${step.id}`}
+                      value={step.instruksiInternal}
+                      onChange={(value) =>
+                        handlePenangananChange(
+                          step.id,
+                          "instruksiInternal",
+                          value
+                        )
+                      }
+                      placeholder="Contoh:&#10;Verifikasi Data Pelanggan&#10;  Cek nama pelanggan&#10;  Cek nomor telepon"
+                    />
 
                     <TemplateChatEditor
                       id={`textarea-${step.id}-templateChat`}
@@ -453,15 +445,14 @@ export default function AdminSOPPage() {
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 dark:border-slate-800 dark:bg-slate-900">
             <h2 className="text-lg font-semibold text-slate-900 mb-4 dark:text-white">Catatan</h2>
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">
-                Catatan Template
-              </label>
-              <textarea
+              <InternalInstructionEditor
+                id="catatan-template-editor"
                 value={formData.catatan}
-                onChange={(e) => handleFieldChange("catatan", e.target.value)}
+                onChange={(value) => handleFieldChange("catatan", value)}
                 placeholder={DEFAULT_CATATAN}
-                rows={3}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-y text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500"
+                label="Catatan Template"
+                defaultMaxDepth={3}
+                helperText="Gunakan list dan tombol indent/outdent untuk membuat catatan bertingkat hingga 3 level."
               />
             </div>
           </div>

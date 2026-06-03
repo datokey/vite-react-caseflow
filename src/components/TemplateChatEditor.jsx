@@ -28,6 +28,8 @@ const QUILL_FORMATS = [
 ];
 
 export default function TemplateChatEditor({
+  enableVariables = true,
+  helperText,
   id,
   value,
   onChange,
@@ -67,16 +69,18 @@ export default function TemplateChatEditor({
           {label}
         </label>
 
-        <button
-          type="button"
-          onClick={() => onToggleVariableMenu(id)}
-          className="rounded bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-          title="Insert variable"
-        >
-          @var
-        </button>
+        {enableVariables && (
+          <button
+            type="button"
+            onClick={() => onToggleVariableMenu(id)}
+            className="rounded bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            title="Insert variable"
+          >
+            @var
+          </button>
+        )}
 
-        {isVariableMenuOpen && (
+        {enableVariables && isVariableMenuOpen && (
           <div className="absolute right-0 top-full z-20 mt-2 min-w-max rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-800 dark:bg-slate-900">
             {AVAILABLE_VARIABLES.map((variable) => (
               <button
@@ -110,7 +114,10 @@ export default function TemplateChatEditor({
       />
 
       <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-        Gunakan toolbar untuk numbering, bullet, bold, italic, atau klik @var untuk placeholder.
+        {helperText ||
+          (enableVariables
+            ? "Gunakan toolbar untuk numbering, bullet, bold, italic, atau klik @var untuk placeholder."
+            : "Gunakan toolbar untuk numbering, bullet, bold, italic, atau format paragraf lainnya.")}
       </p>
     </div>
   );

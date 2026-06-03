@@ -14,10 +14,15 @@ import { escapeRegExp, hasHtmlMarkup, htmlToPlainText } from "./lib/htmlUtils";
 import { articleService } from "./services/articleService";
 
 const NAME_PLACEHOLDER = "Nama Pelanggan";
+const GREETING_PLACEHOLDER = "Bapak/Ibu";
 const SEARCH_HIGHLIGHT_CLASS =
   "rounded bg-amber-200/80 px-0.5 text-slate-950 ring-1 ring-amber-300/70 dark:bg-sky-400/30 dark:text-sky-50 dark:ring-sky-300/30";
 const TEMPLATE_NAME_PATTERN =
   /\{\{\s*(nama|nama_pelanggan|namaPelanggan|customerName|customer_name|pelanggan)\s*\}\}|\{\s*(nama|nama_pelanggan|namaPelanggan|customerName|customer_name|pelanggan)\s*\}|\[\s*(nama|nama pelanggan|customer name|customerName|customer_name|pelanggan)\s*\]|<<\s*(nama|nama pelanggan|customer name|customerName|customer_name|pelanggan)\s*>>/gi;
+const TEMPLATE_GREETING_PATTERN =
+  /\{\{\s*(sapaan|salutation|greeting)\s*\}\}|\{\s*(sapaan|salutation|greeting)\s*\}|\[\s*(sapaan|salutation|greeting)\s*\]|<<\s*(sapaan|salutation|greeting)\s*>>|Bapak\s*\/\s*Ibu/gi;
+const TEMPLATE_GREETING_WITH_NAME_PATTERN =
+  /(?:\{\{\s*(sapaan|salutation|greeting)\s*\}\}|\{\s*(sapaan|salutation|greeting)\s*\}|\[\s*(sapaan|salutation|greeting)\s*\]|<<\s*(sapaan|salutation|greeting)\s*>>|Bapak\s*\/\s*Ibu)\s+(?:\{\{\s*(nama|nama_pelanggan|namaPelanggan|customerName|customer_name|pelanggan)\s*\}\}|\{\s*(nama|nama_pelanggan|namaPelanggan|customerName|customer_name|pelanggan)\s*\}|\[\s*(nama|nama pelanggan|customer name|customerName|customer_name|pelanggan)\s*\]|<<\s*(nama|nama pelanggan|customer name|customerName|customer_name|pelanggan)\s*>>)/gi;
 
 const unwrapBackendValue = (value) => {
   if (value && typeof value === "object") {
@@ -139,20 +144,6 @@ const getKeywordLabels = (article) => {
     .filter(Boolean);
 };
 
-const getDisplayDate = (date) => {
-  const rawDate = toText(date);
-  if (!rawDate) return "-";
-
-  const parsedDate = new Date(rawDate);
-  if (Number.isNaN(parsedDate.getTime())) return rawDate;
-
-  return parsedDate.toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-};
-
 const LOG_TYPE_COLOR_MAP = {
   incident: "text-red-600 dark:text-red-400",
   complaint: "text-orange-500 dark:text-orange-400",
@@ -198,7 +189,60 @@ const getCategory = (article) =>
 const getConditions = (article) =>
   toTextList(getFirstValue(article?.details, ["Kondisi", "kondisi", "conditions", "condition"]));
 
-const normalizeHandlingSteps = (article) => {
+const htmlToSearchText = (value) =>
+  String(value || "")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, "\"")
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const getInstructionContent = (value, { includeInstructionText = false } = {}) => {
+  if (Array.isArray(value)) {
+    const cleanedItems = value.map((item) => toText(item)).filter(Boolean);
+
+    if (cleanedItems.length === 1 && hasHtmlMarkup(cleanedItems[0])) {
+      return {
+        instructions: [],
+        instructionsHtml: cleanedItems[0],
+        instructionsText: includeInstructionText ? htmlToSearchText(cleanedItems[0]) : "",
+      };
+    }
+
+    return {
+      instructions: cleanedItems.flatMap((item) => splitTextList(item)),
+      instructionsHtml: "",
+      instructionsText: cleanedItems.join(" "),
+    };
+  }
+
+  const textValue = toText(value);
+
+  if (hasHtmlMarkup(textValue)) {
+    return {
+      instructions: [],
+      instructionsHtml: textValue,
+      instructionsText: includeInstructionText ? htmlToSearchText(textValue) : "",
+    };
+  }
+
+  const instructions = toTextList(textValue);
+
+  return {
+    instructions,
+    instructionsHtml: "",
+    instructionsText: instructions.join(" "),
+  };
+};
+
+const normalizeHandlingSteps = (article, options = {}) => {
+  const { includeInstructionText = false } = options;
   const rawSteps = getFirstValue(article?.details, [
     "Penanganan",
     "penanganan",
@@ -215,6 +259,8 @@ const normalizeHandlingSteps = (article) => {
             id: `${getSopId(article)}-step-1`,
             title: "Tahap 1: Penanganan",
             instructions,
+            instructionsHtml: "",
+            instructionsText: instructions.join(" "),
             templateChat: "",
           },
         ]
@@ -230,6 +276,8 @@ const normalizeHandlingSteps = (article) => {
           id: `${getSopId(article)}-step-${index + 1}`,
           title: `Tahap ${index + 1}`,
           instructions: toTextList(step),
+          instructionsHtml: "",
+          instructionsText: toTextList(step).join(" "),
           templateChat: "",
         };
       }
@@ -245,7 +293,7 @@ const normalizeHandlingSteps = (article) => {
             "stage",
           ]),
         ) || `Tahap ${index + 1}`;
-      const instructions = toTextList(
+      const instructionContent = getInstructionContent(
         getFirstValue(step, [
           "instruksiInternal",
           "instruksi",
@@ -254,6 +302,7 @@ const normalizeHandlingSteps = (article) => {
           "steps",
           "checklist",
         ]),
+        { includeInstructionText },
       );
       const templateChat = toText(
         getFirstValue(step, [
@@ -268,14 +317,16 @@ const normalizeHandlingSteps = (article) => {
       return {
         id: toText(step?._id) || `${getSopId(article)}-step-${index + 1}`,
         title,
-        instructions,
+        instructions: instructionContent.instructions,
+        instructionsHtml: instructionContent.instructionsHtml,
+        instructionsText: instructionContent.instructionsText,
         templateChat,
       };
     })
-    .filter((step) => step.title || step.instructions.length || step.templateChat);
+    .filter((step) => step.title || step.instructions.length || step.instructionsHtml || step.templateChat);
 };
 
-const getWarnings = (article) => {
+const getWarningContent = (article) => {
   const warningSource =
     getFirstValue(article?.details, [
       "Catatan",
@@ -300,12 +351,48 @@ const getWarnings = (article) => {
       "note",
     ]);
 
-  return toTextList(warningSource);
+  const warningText = toText(warningSource);
+
+  if (hasHtmlMarkup(warningText)) {
+    return {
+      warnings: [],
+      warningsHtml: warningText,
+      warningsText: htmlToSearchText(warningText),
+    };
+  }
+
+  const warnings = toTextList(warningSource);
+
+  return {
+    warnings,
+    warningsHtml: "",
+    warningsText: warnings.join(" "),
+  };
 };
 
-const fillTemplate = (template, customerName) => {
-  const replacement = customerName.trim() || NAME_PLACEHOLDER;
-  return template.replace(TEMPLATE_NAME_PATTERN, replacement);
+const getCustomerDisplayName = (customerName, customerGreeting) => {
+  const trimmedName = customerName.trim();
+  const trimmedGreeting = customerGreeting.trim();
+
+  if (trimmedGreeting && trimmedName) return `${trimmedGreeting} ${trimmedName}`;
+  if (trimmedGreeting) return trimmedGreeting;
+  if (trimmedName) return trimmedName;
+
+  return NAME_PLACEHOLDER;
+};
+
+const fillTemplate = (template, customerName, customerGreeting) => {
+  const trimmedName = customerName.trim();
+  const trimmedGreeting = customerGreeting.trim();
+  const fullCustomerName = getCustomerDisplayName(customerName, customerGreeting);
+  const greetingReplacement = trimmedGreeting
+    ? fullCustomerName
+    : `${GREETING_PLACEHOLDER}${trimmedName ? ` ${trimmedName}` : ""}`;
+
+  return template
+    .replace(TEMPLATE_GREETING_WITH_NAME_PATTERN, greetingReplacement)
+    .replace(TEMPLATE_GREETING_PATTERN, trimmedGreeting ? fullCustomerName : GREETING_PLACEHOLDER)
+    .replace(TEMPLATE_NAME_PATTERN, trimmedName || NAME_PLACEHOLDER);
 };
 
 const getSearchableText = (article) =>
@@ -317,10 +404,12 @@ const getSearchableText = (article) =>
     getCategory(article),
     ...getKeywordLabels(article),
     ...getConditions(article),
-    ...normalizeHandlingSteps(article).flatMap((step) => [
+    getWarningContent(article).warningsText,
+    ...normalizeHandlingSteps(article, { includeInstructionText: true }).flatMap((step) => [
       step.title,
       ...step.instructions,
-      step.templateChat,
+      step.instructionsText,
+      hasHtmlMarkup(step.templateChat) ? htmlToSearchText(step.templateChat) : step.templateChat,
     ]),
   ]
     .filter(Boolean)
@@ -451,8 +540,16 @@ function SopPreviewCard({ article, isSelected, onSelect, searchQuery }) {
   );
 }
 
-function TemplateChatBox({ template, stepId, copiedStepId, customerName, onCopy, searchQuery }) {
-  const filledTemplate = fillTemplate(template, customerName);
+function TemplateChatBox({
+  copiedStepId,
+  customerGreeting,
+  customerName,
+  onCopy,
+  searchQuery,
+  stepId,
+  template,
+}) {
+  const filledTemplate = fillTemplate(template, customerName, customerGreeting);
   const copyText = htmlToPlainText(filledTemplate);
   const isCopied = copiedStepId === stepId;
   const shouldRenderHtml = hasHtmlMarkup(filledTemplate);
@@ -485,7 +582,15 @@ function TemplateChatBox({ template, stepId, copiedStepId, customerName, onCopy,
   );
 }
 
-function TimelineStep({ step, index, copiedStepId, customerName, onCopy, searchQuery }) {
+function TimelineStep({
+  copiedStepId,
+  customerGreeting,
+  customerName,
+  index,
+  onCopy,
+  searchQuery,
+  step,
+}) {
   return (
     <div className="relative pb-8 last:pb-0">
       <div className="absolute -left-[2.15rem] top-0 flex h-7 w-7 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white ring-4 ring-slate-50">
@@ -500,7 +605,14 @@ function TimelineStep({ step, index, copiedStepId, customerName, onCopy, searchQ
           </h3>
         </div>
 
-        {step.instructions.length > 0 && (
+        {step.instructionsHtml ? (
+          <SanitizedHtmlRenderer
+            html={step.instructionsHtml}
+            highlightClassName={SEARCH_HIGHLIGHT_CLASS}
+            highlightQuery={searchQuery}
+            className="internal-instruction-content min-w-0 overflow-x-auto text-sm leading-6 break-words [overflow-wrap:anywhere] prose-a:break-all prose-code:break-words prose-pre:max-w-full prose-pre:overflow-x-auto [&_*]:max-w-full [&_li]:min-w-0 [&_li]:break-words [&_ol]:max-w-full [&_ul]:max-w-full"
+          />
+        ) : step.instructions.length > 0 && (
           <ul className="space-y-2">
             {step.instructions.map((instruction, instructionIndex) => (
               <li
@@ -521,6 +633,7 @@ function TimelineStep({ step, index, copiedStepId, customerName, onCopy, searchQ
             template={step.templateChat}
             stepId={step.id}
             copiedStepId={copiedStepId}
+            customerGreeting={customerGreeting}
             customerName={customerName}
             onCopy={onCopy}
             searchQuery={searchQuery}
@@ -622,10 +735,12 @@ function SopWorkspace({
   article,
   canManage,
   copiedStepId,
+  customerGreeting,
   customerName,
   isDeleting,
   onEdit,
   onCopyTemplate,
+  onCustomerGreetingChange,
   onCustomerNameChange,
   onRequestDelete,
   searchQuery,
@@ -633,10 +748,9 @@ function SopWorkspace({
   const category = getCategory(article);
   const conditions = getConditions(article);
   const handlingSteps = normalizeHandlingSteps(article);
-  const warnings = getWarnings(article);
+  const warningContent = getWarningContent(article);
+  const warnings = warningContent.warnings;
   const keywordLabels = getKeywordLabels(article);
-  const authorName = getAuthorName(article);
-  const sopId = getSopId(article);
   const accentColor = getLogTypeAccentColor(article);
   const titleClassName = getLogTypeTitleClass(article);
 
@@ -666,53 +780,44 @@ function SopWorkspace({
             )}
           </div>
 
-          <div>
-            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
-                <dt className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Author</dt>
-                <dd className="mt-1 font-semibold text-slate-800 dark:text-slate-200">{authorName}</dd>
-              </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
-                <dt className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Dibuat</dt>
-                <dd className="mt-1 font-semibold text-slate-800 dark:text-slate-200">
-                  {getDisplayDate(article?.createdAt)}
-                </dd>
-              </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
-                <dt className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">ID SOP</dt>
-                <dd className="mt-1 truncate font-mono text-xs text-slate-700 dark:text-slate-300">{sopId || "-"}</dd>
-              </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
-                <dt className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Versi</dt>
-                <dd className="mt-1 font-semibold text-slate-800 dark:text-slate-200">
-                  {article?.__v ?? "-"}
-                </dd>
-              </div>
-            </dl>
-            {keywordLabels.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {keywordLabels.map((keyword) => (
-                  <span
-                    key={keyword}
-                    className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-200"
-                  >
-                    <HighlightedText text={keyword} query={searchQuery} />
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+          {keywordLabels.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {keywordLabels.map((keyword) => (
+                <span
+                  key={keyword}
+                  className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-200"
+                >
+                  <HighlightedText text={keyword} query={searchQuery} />
+                </span>
+              ))}
+            </div>
+          )}
 
-          <label className="block w-full xl:max-w-sm">
-            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Nama pelanggan</span>
-            <input
-              type="text"
-              value={customerName}
-              onChange={(event) => onCustomerNameChange(event.target.value)}
-              placeholder={NAME_PLACEHOLDER}
-              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-500/20"
-            />
-          </label>
+          <div className="grid w-full gap-3 sm:grid-cols-[minmax(0,1fr)_9rem] xl:max-w-xl">
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Nama pelanggan</span>
+              <input
+                type="text"
+                value={customerName}
+                onChange={(event) => onCustomerNameChange(event.target.value)}
+                placeholder={NAME_PLACEHOLDER}
+                className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-500/20"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Sapaan</span>
+              <select
+                value={customerGreeting}
+                onChange={(event) => onCustomerGreetingChange(event.target.value)}
+                className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-indigo-400 dark:focus:ring-indigo-500/20"
+              >
+                <option value="">Bapak/Ibu</option>
+                <option value="Bapak">Bapak</option>
+                <option value="Ibu">Ibu</option>
+              </select>
+            </label>
+          </div>
         </div>
       </header>
 
@@ -754,6 +859,7 @@ function SopWorkspace({
                   step={step}
                   index={index}
                   copiedStepId={copiedStepId}
+                  customerGreeting={customerGreeting}
                   customerName={customerName}
                   onCopy={onCopyTemplate}
                   searchQuery={searchQuery}
@@ -769,7 +875,14 @@ function SopWorkspace({
 
         <section className="mt-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-4 text-amber-950 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
           <h2 className="text-base font-bold">Catatan / Warning</h2>
-          {warnings.length > 0 ? (
+          {warningContent.warningsHtml ? (
+            <SanitizedHtmlRenderer
+              html={warningContent.warningsHtml}
+              highlightQuery={searchQuery}
+              highlightClassName={SEARCH_HIGHLIGHT_CLASS}
+              className="internal-instruction-content mt-3 min-w-0 overflow-x-auto text-sm leading-6 break-words [overflow-wrap:anywhere] prose-a:break-all prose-code:break-words prose-pre:max-w-full prose-pre:overflow-x-auto [&_*]:max-w-full [&_li]:min-w-0 [&_li]:break-words [&_ol]:max-w-full [&_ul]:max-w-full"
+            />
+          ) : warnings.length > 0 ? (
             <ul className="mt-3 space-y-2">
               {warnings.map((warning, index) => (
                 <li key={`${getSopId(article)}-warning-${index}`} className="text-sm leading-6">
@@ -880,6 +993,7 @@ function HomePage() {
   const [searchInput, setSearchInput] = useState("");
   const [selectedArticleId, setSelectedArticleId] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [customerGreeting, setCustomerGreeting] = useState("");
   const [copiedStepId, setCopiedStepId] = useState("");
   const [deleteTargetArticle, setDeleteTargetArticle] = useState(null);
   const [isDeletingArticle, setIsDeletingArticle] = useState(false);
@@ -1071,10 +1185,12 @@ function HomePage() {
             article={selectedArticle}
             canManage={userCanManageSop}
             copiedStepId={copiedStepId}
+            customerGreeting={customerGreeting}
             customerName={customerName}
             isDeleting={isDeletingArticle && getSopId(deleteTargetArticle) === getSopId(selectedArticle)}
             onEdit={() => handleEditArticle(selectedArticle)}
             onCopyTemplate={handleCopyTemplate}
+            onCustomerGreetingChange={setCustomerGreeting}
             onCustomerNameChange={setCustomerName}
             onRequestDelete={() => handleRequestDeleteArticle(selectedArticle)}
             searchQuery={searchQuery}

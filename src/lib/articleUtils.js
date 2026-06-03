@@ -55,6 +55,27 @@ const normalizeTextLines = (value) => {
   return [];
 };
 
+const HTML_TAG_PATTERN = /<\/?[a-z][\s\S]*>/i;
+const hasHtmlMarkup = (value = "") => HTML_TAG_PATTERN.test(String(value || ""));
+
+const normalizeInstructionPayload = (value) => {
+  if (Array.isArray(value)) {
+    const cleanedItems = value.map((item) => String(item || "").trim()).filter(Boolean);
+
+    if (cleanedItems.length === 1 && hasHtmlMarkup(cleanedItems[0])) {
+      return [cleanedItems[0]];
+    }
+
+    return cleanedItems;
+  }
+
+  if (typeof value === "string" && hasHtmlMarkup(value)) {
+    return value.trim() ? [value.trim()] : [];
+  }
+
+  return normalizeTextLines(value);
+};
+
 const EMPTY_HANDLING_STEP = {
   judulPenanganan: "",
   instruksiInternal: "",
@@ -65,7 +86,9 @@ const mapHandlingStepToForm = (step = {}) => ({
   _id: step?._id || step?.id,
   judulPenanganan: step?.judulPenanganan || "",
   instruksiInternal: Array.isArray(step?.instruksiInternal)
-    ? step.instruksiInternal.join("\n")
+    ? step.instruksiInternal.length === 1 && hasHtmlMarkup(step.instruksiInternal[0])
+      ? step.instruksiInternal[0]
+      : step.instruksiInternal.join("\n")
     : step?.instruksiInternal || "",
   templateChat: step?.templateChat || "",
 });
@@ -142,7 +165,7 @@ export const buildArticleSavePayload = (formData) => {
   const penangananArray = mapHandlingToForm(penanganan)
     .map((step) => ({
       judulPenanganan: step.judulPenanganan || "",
-      instruksiInternal: normalizeTextLines(step.instruksiInternal),
+      instruksiInternal: normalizeInstructionPayload(step.instruksiInternal),
       templateChat: step.templateChat || "",
     }))
     .filter(
