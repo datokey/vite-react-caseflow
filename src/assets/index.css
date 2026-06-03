@@ -636,3 +636,24 @@ body {
 :is(.template-chat-content, .article-content, .internal-instruction-content, .template-chat-editor .ql-editor) ul ul ul {
   list-style-type: square;
 }
+
+@keyframes sop-search-highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.55);
+    outline: 0 solid rgba(251, 191, 36, 0.7);
+  }
+
+  45% {
+    box-shadow: 0 0 0 7px rgba(251, 191, 36, 0);
+    outline: 2px solid rgba(251, 191, 36, 0.8);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+    outline: 0 solid rgba(251, 191, 36, 0);
+  }
+}
+
+.sop-search-highlight-pulse {
+  animation: sop-search-highlight-pulse 480ms ease-out 1;
+}

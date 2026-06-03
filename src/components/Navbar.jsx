@@ -7,6 +7,7 @@ import Login from "./Login.jsx";
 
 const PRIMARY_LINKS = [
   { label: "Beranda", to: "/" }, 
+  { label: "Statistik Kerja", to: "/analytics" },
   { label: "Link Penting", to: "/links" },
 ];
 

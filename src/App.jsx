@@ -12,11 +12,14 @@ import { useToast } from "./hooks/useToast";
 import { ARTICLE_MESSAGES, ARTICLE_ROUTES } from "./lib/articleConstants";
 import { escapeRegExp, hasHtmlMarkup, htmlToPlainText } from "./lib/htmlUtils";
 import { articleService } from "./services/articleService";
+import { recordingService } from "./services/recordingService";
 
 const NAME_PLACEHOLDER = "Nama Pelanggan";
 const GREETING_PLACEHOLDER = "Bapak/Ibu";
+const SEARCH_HIGHLIGHT_MARK_CLASS = "sop-search-highlight";
+const SEARCH_HIGHLIGHT_PULSE_CLASS = "sop-search-highlight-pulse";
 const SEARCH_HIGHLIGHT_CLASS =
-  "rounded bg-amber-200/80 px-0.5 text-slate-950 ring-1 ring-amber-300/70 dark:bg-sky-400/30 dark:text-sky-50 dark:ring-sky-300/30";
+  `${SEARCH_HIGHLIGHT_MARK_CLASS} rounded bg-amber-200/80 px-0.5 text-slate-950 ring-1 ring-amber-300/70 dark:bg-sky-400/30 dark:text-sky-50 dark:ring-sky-300/30`;
 const TEMPLATE_NAME_PATTERN =
   /\{\{\s*(nama|nama_pelanggan|namaPelanggan|customerName|customer_name|pelanggan)\s*\}\}|\{\s*(nama|nama_pelanggan|namaPelanggan|customerName|customer_name|pelanggan)\s*\}|\[\s*(nama|nama pelanggan|customer name|customerName|customer_name|pelanggan)\s*\]|<<\s*(nama|nama pelanggan|customer name|customerName|customer_name|pelanggan)\s*>>/gi;
 const TEMPLATE_GREETING_PATTERN =
@@ -483,6 +486,14 @@ const getHighlightParts = (text, query) => {
   }
 
   return parts.length ? parts : [{ text: value, isMatch: false }];
+};
+
+const isElementInViewport = (element) => {
+  const rect = element.getBoundingClientRect();
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+
+  return rect.top >= 0 && rect.left >= 0 && rect.bottom <= viewportHeight && rect.right <= viewportWidth;
 };
 
 function HighlightedText({ className = "", query, text }) {
@@ -984,6 +995,551 @@ function DeleteConfirmationModal({ article, isDeleting, onCancel, onConfirm }) {
   );
 }
 
+const RECORDING_CHANNELS = [
+  { key: "whatsapp", label: "WhatsApp", icon: "whatsapp", colorClass: "bg-emerald-500" },
+  { key: "email", label: "Email", icon: "email", colorClass: "bg-sky-500" },
+  { key: "livechat", label: "Livechat", icon: "livechat", colorClass: "bg-violet-500" },
+  { key: "tiktok", label: "TikTok", icon: "tiktok", colorClass: "bg-slate-950" },
+  { key: "fb", label: "FB", icon: "facebook", colorClass: "bg-blue-600" },
+  { key: "ig", label: "IG", icon: "instagram", colorClass: "bg-pink-500" },
+  { key: "x", label: "X", icon: "x", colorClass: "bg-slate-950" },
+  { key: "call", label: "Call", icon: "call", colorClass: "bg-teal-600" },
+];
+
+const createEmptyRecordingCounters = () =>
+  RECORDING_CHANNELS.reduce((counters, channel) => {
+    counters[channel.key] = 0;
+    return counters;
+  }, {});
+
+function RecordingChannelIcon({ channel, className = "h-4 w-4" }) {
+  const icon = channel?.icon;
+  const commonProps = {
+    className,
+    fill: "none",
+    stroke: "currentColor",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    strokeWidth: 2,
+    viewBox: "0 0 24 24",
+  };
+
+  if (icon === "whatsapp") {
+    return (
+      <svg {...commonProps} aria-hidden="true">
+        <path d="M4.5 19.5 5.6 16.2A8 8 0 1 1 8 18.4Z" />
+        <path d="M9 8.5c.3 3 2.2 5 5.5 6" />
+        <path d="m9.4 8.8.9-1.1" />
+        <path d="m14.1 14.2 1.3-.8" />
+      </svg>
+    );
+  }
+
+  if (icon === "email") {
+    return (
+      <svg {...commonProps} aria-hidden="true">
+        <path d="M4 6h16v12H4Z" />
+        <path d="m4 7 8 6 8-6" />
+      </svg>
+    );
+  }
+
+  if (icon === "livechat") {
+    return (
+      <svg {...commonProps} aria-hidden="true">
+        <path d="M5 6h14v9H8l-3 3Z" />
+        <path d="M9 10h6" />
+        <path d="M9 13h4" />
+      </svg>
+    );
+  }
+
+  if (icon === "tiktok") {
+    return (
+      <svg {...commonProps} aria-hidden="true">
+        <path d="M14 4v10.5a3.5 3.5 0 1 1-3.5-3.5" />
+        <path d="M14 4c.7 2.2 2.2 3.8 4.5 4.2" />
+      </svg>
+    );
+  }
+
+  if (icon === "facebook") {
+    return (
+      <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M14.3 8H17V4.6A16 16 0 0 0 13.9 4c-3.1 0-5.2 1.9-5.2 5.3V12H5.5v3.8h3.2V23h3.9v-7.2h3.2l.5-3.8h-3.7V9.7c0-1.1.3-1.7 1.7-1.7Z"
+          fill="currentColor"
+        />
+      </svg>
+    );
+  }
+
+  if (icon === "instagram") {
+    return (
+      <svg {...commonProps} aria-hidden="true">
+        <rect x="5" y="5" width="14" height="14" rx="4" />
+        <circle cx="12" cy="12" r="3" />
+        <path d="M16.5 7.5h.01" />
+      </svg>
+    );
+  }
+
+  if (icon === "x") {
+    return (
+      <svg {...commonProps} aria-hidden="true">
+        <path d="m5 5 14 14" />
+        <path d="M19 5 5 19" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...commonProps} aria-hidden="true">
+      <path d="M22 16.9v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.7.6 2.5a2 2 0 0 1-.4 2.1L8 9.6a16 16 0 0 0 6.4 6.4l1.3-1.3a2 2 0 0 1 2.1-.4c.8.3 1.6.5 2.5.6a2 2 0 0 1 1.7 2Z" />
+    </svg>
+  );
+}
+
+function FloatingDrawerCounter() {
+  const { showToast } = useToast();
+  const [activeChannelKey, setActiveChannelKey] = useState(RECORDING_CHANNELS[0].key);
+  const [counters, setCounters] = useState(createEmptyRecordingCounters);
+  const [isLoadingCounters, setIsLoadingCounters] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [pendingChannelKeys, setPendingChannelKeys] = useState({});
+
+  const activeChannel =
+    RECORDING_CHANNELS.find((channel) => channel.key === activeChannelKey) || RECORDING_CHANNELS[0];
+  const activeCounter = counters[activeChannel.key] || 0;
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadTodayCounters = async () => {
+      try {
+        setIsLoadingCounters(true);
+        const todayCounters = await recordingService.getTodayCounters();
+
+        if (!isActive) return;
+
+        setCounters((currentCounters) => ({
+          ...currentCounters,
+          ...todayCounters,
+        }));
+      } catch (error) {
+        if (isActive) {
+          showToast(error?.message || "Gagal memuat counter tiket harian.", "error");
+        }
+      } finally {
+        if (isActive) {
+          setIsLoadingCounters(false);
+        }
+      }
+    };
+
+    loadTodayCounters();
+
+    return () => {
+      isActive = false;
+    };
+  }, [showToast]);
+
+  const updateChannelCounter = async (channelKey, action) => {
+    const currentValue = counters[channelKey] || 0;
+    const optimisticValue =
+      action === "increment" ? currentValue + 1 : Math.max(0, currentValue - 1);
+
+    if (action === "decrement" && currentValue <= 0) {
+      return;
+    }
+
+    setCounters((currentCounters) => ({
+      ...currentCounters,
+      [channelKey]: optimisticValue,
+    }));
+    setPendingChannelKeys((currentPending) => ({ ...currentPending, [channelKey]: true }));
+
+    try {
+      const savedValue =
+        action === "increment"
+          ? await recordingService.increment(channelKey, currentValue)
+          : await recordingService.decrement(channelKey, currentValue);
+
+      setCounters((currentCounters) => ({
+        ...currentCounters,
+        [channelKey]: savedValue,
+      }));
+    } catch (error) {
+      setCounters((currentCounters) => ({
+        ...currentCounters,
+        [channelKey]: currentValue,
+      }));
+      showToast(error?.message || "Gagal memperbarui counter tiket.", "error");
+    } finally {
+      setPendingChannelKeys((currentPending) => {
+        const nextPending = { ...currentPending };
+        delete nextPending[channelKey];
+        return nextPending;
+      });
+    }
+  };
+
+  return (
+    <div
+      className={`fixed bottom-4 left-4 z-50 flex flex-col-reverse items-start ${
+        isDrawerOpen ? "w-56" : "w-14"
+      }`}
+      onMouseEnter={() => setIsDrawerOpen(true)}
+      onMouseLeave={() => setIsDrawerOpen(false)}
+      onFocus={() => setIsDrawerOpen(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+          setIsDrawerOpen(false);
+        }
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => updateChannelCounter(activeChannel.key, "increment")}
+        disabled={Boolean(pendingChannelKeys[activeChannel.key])}
+        aria-label={`Tambah counter ${activeChannel.label}`}
+        className="relative flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-slate-950 text-sm font-black text-white shadow-xl transition hover:scale-105 hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:cursor-wait disabled:opacity-70 dark:border-slate-700 dark:bg-indigo-600 dark:hover:bg-indigo-500"
+      >
+        <span
+          className={`flex h-9 w-9 items-center justify-center rounded-full ${activeChannel.colorClass || "bg-slate-800"}`}
+        >
+          <RecordingChannelIcon channel={activeChannel} className="h-5 w-5" />
+        </span>
+        <span className="absolute -right-1 -top-1 min-w-6 rounded-full border-2 border-white bg-amber-400 px-1.5 py-0.5 text-center text-xs font-black text-slate-950 dark:border-slate-950">
+          {activeCounter}
+        </span>
+      </button>
+
+      {isDrawerOpen && (
+        <div className="mb-2 flex flex-col gap-2 rounded-lg border border-slate-200 bg-white/95 p-2 opacity-100 shadow-2xl backdrop-blur transition duration-200 dark:border-slate-800 dark:bg-slate-950/95">
+          {RECORDING_CHANNELS.map((channel) => {
+            const counter = counters[channel.key] || 0;
+            const isActiveChannel = activeChannelKey === channel.key;
+            const isPending = Boolean(pendingChannelKeys[channel.key]);
+
+            return (
+              <div
+                key={channel.key}
+                className={`flex w-52 items-center gap-2 rounded-lg border px-2 py-2 transition ${
+                  isActiveChannel
+                    ? "border-indigo-200 bg-indigo-50 dark:border-indigo-500/30 dark:bg-indigo-500/15"
+                    : "border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800"
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setActiveChannelKey(channel.key)}
+                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-black text-white dark:bg-slate-700">
+                    <span
+                      className={`flex h-8 w-8 items-center justify-center rounded-full ${channel.colorClass || "bg-slate-800"}`}
+                    >
+                      <RecordingChannelIcon channel={channel} className="h-4 w-4" />
+                    </span>
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-bold text-slate-900 dark:text-white">
+                      {channel.label}
+                    </span>
+                    <span className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                      {counter} tiket
+                    </span>
+                  </span>
+                </button>
+
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => updateChannelCounter(channel.key, "decrement")}
+                    disabled={isPending || counter <= 0}
+                    aria-label={`Kurangi counter ${channel.label}`}
+                    className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-lg font-black text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    -
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateChannelCounter(channel.key, "increment")}
+                    disabled={isPending}
+                    aria-label={`Tambah counter ${channel.label}`}
+                    className="flex h-8 w-8 items-center justify-center rounded-md bg-indigo-600 text-lg font-black text-white transition hover:bg-indigo-700 disabled:cursor-wait disabled:opacity-60 dark:hover:bg-indigo-500"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {isLoadingCounters && (
+            <p className="px-2 py-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Memuat counter...
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const ANALYTICS_PERIODS = [
+  { value: "daily", label: "Hari Ini" },
+  { value: "monthly", label: "Bulan Ini" },
+];
+
+const sumCounters = (counters) =>
+  RECORDING_CHANNELS.reduce((total, channel) => total + (counters[channel.key] || 0), 0);
+
+const sumTrend = (trend) => trend.reduce((total, item) => total + (item.total || 0), 0);
+
+const getTopChannel = (counters) =>
+  RECORDING_CHANNELS.reduce(
+    (topChannel, channel) => {
+      const count = counters[channel.key] || 0;
+      return count > topChannel.count ? { ...channel, count } : topChannel;
+    },
+    { ...RECORDING_CHANNELS[0], count: 0 },
+  );
+
+const formatTrendDate = (date) => {
+  const dateText = String(date || "");
+  const parsedDate = new Date(dateText);
+
+  if (!Number.isNaN(parsedDate.getTime())) {
+    return parsedDate.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+    });
+  }
+
+  return dateText;
+};
+
+function AnalyticsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-3">
+        {[1, 2, 3].map((item) => (
+          <div key={item} className="h-32 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />
+        ))}
+      </div>
+      <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        {[1, 2, 3, 4, 5].map((item) => (
+          <div key={item} className="h-8 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SummaryCard({ label, value, helper, tone = "slate" }) {
+  const toneClassMap = {
+    emerald: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200",
+    indigo: "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-200",
+    slate: "bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-200",
+  };
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <p className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
+      <p className="mt-3 text-3xl font-black text-slate-950 dark:text-white">{value}</p>
+      <p className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${toneClassMap[tone]}`}>
+        {helper}
+      </p>
+    </div>
+  );
+}
+
+function ChannelBarChart({ counters }) {
+  const maxValue = Math.max(...RECORDING_CHANNELS.map((channel) => counters[channel.key] || 0), 1);
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <h2 className="text-lg font-black text-slate-950 dark:text-white">Volume per Channel</h2>
+      <div className="mt-5 space-y-4">
+        {RECORDING_CHANNELS.map((channel) => {
+          const value = counters[channel.key] || 0;
+          const width = `${Math.max((value / maxValue) * 100, value > 0 ? 8 : 0)}%`;
+
+          return (
+            <div key={channel.key} className="grid gap-2 sm:grid-cols-[8rem_minmax(0,1fr)_3rem] sm:items-center">
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
+                <span className={`flex h-7 w-7 items-center justify-center rounded-full text-white ${channel.colorClass}`}>
+                  <RecordingChannelIcon channel={channel} className="h-4 w-4" />
+                </span>
+                {channel.label}
+              </div>
+              <div className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-indigo-500 transition-all"
+                  style={{ width }}
+                />
+              </div>
+              <p className="text-right text-sm font-black text-slate-900 dark:text-white">{value}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MonthlyTrendChart({ trend }) {
+  const maxValue = Math.max(...trend.map((item) => item.total), 1);
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <h2 className="text-lg font-black text-slate-950 dark:text-white">Tren Tiket Bulanan</h2>
+      <div className="mt-5 space-y-3">
+        {trend.map((item) => {
+          const width = `${Math.max((item.total / maxValue) * 100, item.total > 0 ? 8 : 0)}%`;
+
+          return (
+            <div key={item.date} className="grid gap-2 sm:grid-cols-[7rem_minmax(0,1fr)_5rem] sm:items-center">
+              <p className="text-sm font-bold text-slate-600 dark:text-slate-300">
+                {formatTrendDate(item.date)}
+              </p>
+              <div className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-all"
+                  style={{ width }}
+                />
+              </div>
+              <p className="text-right text-sm font-black text-slate-900 dark:text-white">
+                {item.total} tiket
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsDashboard() {
+  const { showToast } = useToast();
+  const [period, setPeriod] = useState("daily");
+  const [isLoading, setIsLoading] = useState(false);
+  const [counters, setCounters] = useState(createEmptyRecordingCounters);
+  const [trend, setTrend] = useState([]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadStatistics = async () => {
+      try {
+        setIsLoading(true);
+        const statistics = await recordingService.getStatistics(period);
+
+        if (!isActive) return;
+
+        setCounters((currentCounters) => ({
+          ...currentCounters,
+          ...statistics.counters,
+        }));
+        setTrend(statistics.trend);
+      } catch (error) {
+        if (isActive) {
+          setCounters(createEmptyRecordingCounters());
+          setTrend([]);
+          showToast(error?.message || "Gagal memuat statistik kerja.", "error");
+        }
+      } finally {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadStatistics();
+
+    return () => {
+      isActive = false;
+    };
+  }, [period, showToast]);
+
+  const channelTotalVolume = sumCounters(counters);
+  const trendTotalVolume = sumTrend(trend);
+  const totalVolume = channelTotalVolume || trendTotalVolume;
+  const topChannel = getTopChannel(counters);
+  const topChannelPercentage = totalVolume > 0 ? Math.round((topChannel.count / totalVolume) * 100) : 0;
+  const hasData = totalVolume > 0 || trend.some((item) => item.total > 0);
+
+  return (
+    <main className="min-h-[calc(100vh-4rem)] bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8 dark:bg-slate-950 dark:text-white">
+      <div className="mx-auto max-w-6xl">
+        <div className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between dark:border-slate-800">
+          <div>
+            <p className="text-sm font-bold uppercase text-indigo-600 dark:text-indigo-300">Statistik Kerja</p>
+            <h1 className="mt-2 text-3xl font-black">Analytics Dashboard</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+              Ringkasan performa tiket berdasarkan counter harian per channel.
+            </p>
+          </div>
+
+          <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            {ANALYTICS_PERIODS.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => setPeriod(item.value)}
+                className={`rounded-md px-4 py-2 text-sm font-bold transition ${
+                  period === item.value
+                    ? "bg-indigo-600 text-white"
+                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-6">
+          {isLoading ? (
+            <AnalyticsSkeleton />
+          ) : (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <SummaryCard
+                  label="Total Volume"
+                  value={totalVolume}
+                  helper={period === "daily" ? "Total Tiket Hari Ini" : "Total Tiket Bulan Ini"}
+                  tone="indigo"
+                />
+                <SummaryCard
+                  label="Channel Tertinggi"
+                  value={topChannel.count > 0 ? topChannel.label : "-"}
+                  helper={`${topChannel.count} tiket • ${topChannelPercentage}%`}
+                  tone="emerald"
+                />
+              </div>
+
+              {!hasData ? (
+                <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-sm font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+                  Belum ada data tiket untuk periode ini.
+                </div>
+              ) : period === "daily" ? (
+                <ChannelBarChart counters={counters} />
+              ) : trend.length > 0 ? (
+                <MonthlyTrendChart trend={trend} />
+              ) : (
+                <ChannelBarChart counters={counters} />
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </main>
+  );
+}
+
 function HomePage() {
   const { articles: loadedArticles, errorMsg, isErrorArticles, isLoadingArticles } = useArticles();
   const { user } = useAuth();
@@ -998,6 +1554,9 @@ function HomePage() {
   const [deleteTargetArticle, setDeleteTargetArticle] = useState(null);
   const [isDeletingArticle, setIsDeletingArticle] = useState(false);
   const searchInputRef = useRef(null);
+  const searchPulseTimeoutRef = useRef(null);
+  const searchPulseCleanupTimeoutRef = useRef(null);
+  const lastPulsedSearchKeyRef = useRef("");
   const userCanManageSop = useMemo(() => canManageSop(user), [user]);
 
   const articles = useMemo(
@@ -1042,6 +1601,61 @@ function HomePage() {
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
   }, []);
+
+  useEffect(() => {
+    window.clearTimeout(searchPulseTimeoutRef.current);
+    window.clearTimeout(searchPulseCleanupTimeoutRef.current);
+
+    if (!searchQuery || isLoadingArticles || isErrorArticles || !filteredArticles.length) {
+      lastPulsedSearchKeyRef.current = "";
+      return undefined;
+    }
+
+    const searchKey = `${searchQuery}::${visibleSelectedArticleId}::${filteredArticles.length}`;
+
+    if (lastPulsedSearchKeyRef.current === searchKey) {
+      return undefined;
+    }
+
+    searchPulseTimeoutRef.current = window.setTimeout(() => {
+      const firstHighlight = document.querySelector(`.${SEARCH_HIGHLIGHT_MARK_CLASS}`);
+
+      if (!firstHighlight) return;
+
+      firstHighlight.classList.remove(SEARCH_HIGHLIGHT_PULSE_CLASS);
+
+      const shouldScroll = !isElementInViewport(firstHighlight);
+
+      if (shouldScroll) {
+        firstHighlight.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "nearest",
+        });
+      }
+
+      window.setTimeout(() => {
+        firstHighlight.classList.add(SEARCH_HIGHLIGHT_PULSE_CLASS);
+
+        searchPulseCleanupTimeoutRef.current = window.setTimeout(() => {
+          firstHighlight.classList.remove(SEARCH_HIGHLIGHT_PULSE_CLASS);
+        }, 500);
+      }, shouldScroll ? 380 : 0);
+
+      lastPulsedSearchKeyRef.current = searchKey;
+    }, 320);
+
+    return () => {
+      window.clearTimeout(searchPulseTimeoutRef.current);
+      window.clearTimeout(searchPulseCleanupTimeoutRef.current);
+    };
+  }, [
+    filteredArticles.length,
+    isErrorArticles,
+    isLoadingArticles,
+    searchQuery,
+    visibleSelectedArticleId,
+  ]);
 
   const handleCopyTemplate = async (template, stepId) => {
     try {
@@ -1205,6 +1819,7 @@ function HomePage() {
         onCancel={handleCancelDeleteArticle}
         onConfirm={handleConfirmDeleteArticle}
       />
+      <FloatingDrawerCounter />
     </>
   );
 }
@@ -1259,6 +1874,7 @@ function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<HomePage />} /> 
+        <Route path="/analytics" element={<AnalyticsDashboard />} />
         <Route path="/edit/:id" element={<EditPage />} />
         <Route path="/sop/:id/edit" element={<EditPage />} />
         <Route path="/admin/sop" element={<AdminSOPPage />} />
