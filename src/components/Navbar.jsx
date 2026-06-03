@@ -3,7 +3,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
 import { useToast } from "../hooks/useToast";
-import Login from "./Login.jsx";
+import AuthModal from "./AuthModal.jsx";
 
 const PRIMARY_LINKS = [
   { label: "Beranda", to: "/" }, 
@@ -41,7 +41,7 @@ const canAccessAdminMenu = (user) => {
   return roleSources
     .map(getRoleText)
     .map(normalizeRoleLabel)
-    .some((role) => ["admin", "administrator", "super_admin", "superadmin"].includes(role));
+    .some((role) => ["admin", "super_admin", "superadmin"].includes(role));
 };
 
 const navLinkClass = ({ isActive }) =>
@@ -185,7 +185,7 @@ const Navbar = () => {
     closeMenus();
     await logout();
     showToast("Anda berhasil keluar.", "success");
-    navigate("/");
+    navigate("/", { replace: true });
   };
 
   useEffect(() => {
@@ -252,70 +252,48 @@ const Navbar = () => {
               </NavLink>
             ))}
 
-            <div className="relative" ref={adminMenuRef}>
-              <button
-                type="button"
-                aria-haspopup="menu"
-                aria-expanded={isAdminOpen}
-                onClick={() => setIsAdminOpen((currentValue) => !currentValue)}
-                className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus:ring-offset-slate-950"
-              >
-                Admin
-                <ChevronIcon isOpen={isAdminOpen} />
-              </button>
+            {userCanAccessAdmin && (
+              <div className="relative" ref={adminMenuRef}>
+                <button
+                  type="button"
+                  aria-haspopup="menu"
+                  aria-expanded={isAdminOpen}
+                  onClick={() => setIsAdminOpen((currentValue) => !currentValue)}
+                  className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus:ring-offset-slate-950"
+                >
+                  Admin
+                  <ChevronIcon isOpen={isAdminOpen} />
+                </button>
 
-              <div
-                role="menu"
-                className={`absolute right-0 top-full mt-2 w-64 rounded-lg border border-slate-200 bg-white p-2 shadow-xl transition-all duration-200 dark:border-slate-800 dark:bg-slate-900 ${
-                  isAdminOpen
-                    ? "visible translate-y-0 opacity-100"
-                    : "invisible -translate-y-2 opacity-0"
-                }`}
-              >
-                {user && (
+                <div
+                  role="menu"
+                  className={`absolute right-0 top-full mt-2 w-64 rounded-lg border border-slate-200 bg-white p-2 shadow-xl transition-all duration-200 dark:border-slate-800 dark:bg-slate-900 ${
+                    isAdminOpen
+                      ? "visible translate-y-0 opacity-100"
+                      : "invisible -translate-y-2 opacity-0"
+                  }`}
+                >
                   <div className="mb-1 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                     Masuk sebagai{" "}
                     <span className="font-semibold text-slate-900 dark:text-white">
                       {getDisplayName(user)}
                     </span>
                   </div>
-                )}
 
-                {visibleAdminLinks.map((link) => (
-                  <NavLink
-                    key={link.to}
-                    to={link.to}
-                    role="menuitem"
-                    onClick={closeMenus}
-                    className={mobileLinkClass}
-                  >
-                    {link.label}
-                  </NavLink>
-                ))}
-
-                <div className="my-2 border-t border-slate-100 dark:border-slate-800" />
-
-                {user ? (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={handleLogout}
-                    className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10"
-                  >
-                    Logout
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={openLogin}
-                    className="block w-full rounded-lg bg-indigo-600 px-3 py-2 text-left text-sm font-semibold text-white transition hover:bg-indigo-700"
-                  >
-                    Login
-                  </button>
-                )}
+                  {visibleAdminLinks.map((link) => (
+                    <NavLink
+                      key={link.to}
+                      to={link.to}
+                      role="menuitem"
+                      onClick={closeMenus}
+                      className={mobileLinkClass}
+                    >
+                      {link.label}
+                    </NavLink>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="hidden items-center gap-2 md:flex">
@@ -331,13 +309,22 @@ const Navbar = () => {
             </button>
 
             {user ? (
-              <Link
-                to="/cek-me"
-                className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-              >
-                <UserIcon />
-                <span className="max-w-36 truncate">{getDisplayName(user)}</span>
-              </Link>
+              <>
+                <Link
+                  to="/cek-me"
+                  className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  <UserIcon />
+                  <span className="max-w-36 truncate">{getDisplayName(user)}</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="inline-flex h-10 items-center rounded-lg border border-rose-200 px-3 text-sm font-semibold text-rose-600 transition hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-offset-2 dark:border-rose-500/30 dark:text-rose-300 dark:hover:bg-rose-500/10 dark:focus:ring-offset-slate-950"
+                >
+                  Logout
+                </button>
+              </>
             ) : (
               <button
                 type="button"
@@ -378,14 +365,18 @@ const Navbar = () => {
               </NavLink>
             ))}
 
-            <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+            {userCanAccessAdmin && (
+              <>
+                <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
 
-            <p className="px-3 pb-1 text-xs font-bold uppercase text-slate-400">Admin</p>
-            {visibleAdminLinks.map((link) => (
-              <NavLink key={link.to} to={link.to} className={mobileLinkClass} onClick={closeMenus}>
-                {link.label}
-              </NavLink>
-            ))}
+                <p className="px-3 pb-1 text-xs font-bold uppercase text-slate-400">Admin</p>
+                {visibleAdminLinks.map((link) => (
+                  <NavLink key={link.to} to={link.to} className={mobileLinkClass} onClick={closeMenus}>
+                    {link.label}
+                  </NavLink>
+                ))}
+              </>
+            )}
 
             <button
               type="button"
@@ -424,29 +415,7 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {isLoginOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
-          <button
-            type="button"
-            aria-label="Tutup modal login"
-            className="absolute inset-0"
-            onClick={() => setIsLoginOpen(false)}
-          />
-
-          <div className="relative z-10 w-full max-w-md rounded-lg border border-slate-100 bg-white p-2 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-            <button
-              type="button"
-              onClick={() => setIsLoginOpen(false)}
-              aria-label="Tutup form login"
-              className="absolute right-4 top-4 rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-            >
-              <MenuIcon isOpen />
-            </button>
-
-            <Login setCloseModal={() => setIsLoginOpen(false)} />
-          </div>
-        </div>
-      )}
+      <AuthModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </>
   );
 };

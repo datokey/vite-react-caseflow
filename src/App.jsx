@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BrowserRouter, Link, Route, Routes, useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import AuthModal from "./components/AuthModal";
 import Navbar from "./components/Navbar"; 
 import SanitizedHtmlRenderer from "./components/SanitizedHtmlRenderer";
 import EditPage from "./pages/EditPage";
@@ -13,6 +14,7 @@ import { useToast } from "./hooks/useToast";
 import { ARTICLE_MESSAGES, ARTICLE_ROUTES } from "./lib/articleConstants";
 import { escapeRegExp, hasHtmlMarkup, htmlToPlainText } from "./lib/htmlUtils";
 import { articleService } from "./services/articleService";
+import { authService } from "./services/authService";
 import { recordingService } from "./services/recordingService";
 import { sopUsageService } from "./services/sopUsageService";
 
@@ -90,6 +92,25 @@ const canManageSop = (user) => {
     );
 };
 
+const canAccessAdminRoute = (user) => {
+  if (!user) return false;
+  if (user.isAdmin || user.isSuperAdmin || user.is_admin || user.is_super_admin) return true;
+
+  const roleSources = [
+    user.role,
+    user.userRole,
+    user.roleName,
+    user.type,
+    user.accessLevel,
+    ...(Array.isArray(user.roles) ? user.roles : []),
+  ];
+
+  return roleSources
+    .map(roleValueToText)
+    .map(normalizeRoleLabel)
+    .some((role) => ["admin", "superadmin", "super_admin"].includes(role));
+};
+
 const splitTextList = (value) =>
   value
     .split(/\r?\n|;|•/)
@@ -149,15 +170,6 @@ const getKeywordLabels = (article) => {
     .filter(Boolean);
 };
 
-const LOG_TYPE_COLOR_MAP = {
-  incident: "text-red-600 dark:text-red-400",
-  complaint: "text-orange-500 dark:text-orange-400",
-  request: "text-yellow-500 dark:text-yellow-400",
-  inquiry: "text-green-600 dark:text-green-400",
-  feedback: "text-blue-600 dark:text-blue-400",
-  other: "text-gray-500 dark:text-gray-400",
-};
-
 const LOG_TYPE_ACCENT_COLOR_MAP = {
   incident: "#dc2626",
   complaint: "#f97316",
@@ -173,11 +185,6 @@ const getLogType = (article) =>
       article?.jenisLog ||
       article?.logType,
   ) || "Other";
-
-const getLogTypeTitleClass = (article) => {
-  const typeKey = getLogType(article).trim().toLowerCase();
-  return LOG_TYPE_COLOR_MAP[typeKey] || LOG_TYPE_COLOR_MAP.other;
-};
 
 const getLogTypeAccentColor = (article) => {
   const typeKey = getLogType(article).trim().toLowerCase();
@@ -522,7 +529,6 @@ function SopPreviewCard({ article, isPopular = false, isSelected, onSelect, sear
   const handlingSteps = normalizeHandlingSteps(article);
   const keywordLabels = getKeywordLabels(article);
   const accentColor = getLogTypeAccentColor(article);
-  const titleClassName = getLogTypeTitleClass(article);
 
   return (
     <button
@@ -539,7 +545,7 @@ function SopPreviewCard({ article, isPopular = false, isSelected, onSelect, sear
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{category}</p>
-            <h2 className={`mt-2 line-clamp-2 text-base font-bold leading-snug ${titleClassName}`}>
+            <h2 className="mt-2 line-clamp-2 text-base font-bold leading-snug text-slate-950 dark:text-white">
               <HighlightedText text={article?.title || "Tanpa judul SOP"} query={searchQuery} />
             </h2>
           </div>
@@ -779,7 +785,6 @@ function SopWorkspace({
   const keywordLabels = getKeywordLabels(article);
   const sopId = getSopId(article);
   const accentColor = getLogTypeAccentColor(article);
-  const titleClassName = getLogTypeTitleClass(article);
 
   return (
     <article className="min-h-[calc(100vh-4rem)] bg-slate-50 dark:bg-slate-950">
@@ -788,7 +793,7 @@ function SopWorkspace({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
               <p className="text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">{category}</p>
-              <h1 className={`mt-2 text-2xl font-black leading-tight sm:text-3xl ${titleClassName}`}>
+              <h1 className="mt-2 text-2xl font-black leading-tight text-slate-950 sm:text-3xl dark:text-white">
                 <HighlightedText text={article?.title || "Tanpa judul SOP"} query={searchQuery} />
               </h1>
               {article?.content && (
@@ -1575,8 +1580,14 @@ function AnalyticsDashboard() {
 }
 
 function HomePage() {
-  const { articles: loadedArticles, errorMsg, isErrorArticles, isLoadingArticles } = useArticles();
-  const { user } = useAuth();
+  const { loading: isAuthLoading, user } = useAuth();
+  const isAuthenticated = Boolean(user);
+  const {
+    articles: loadedArticles,
+    errorMsg,
+    isErrorArticles,
+    isLoadingArticles,
+  } = useArticles({ enabled: !isAuthLoading && isAuthenticated });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -1601,6 +1612,8 @@ function HomePage() {
   const frequentlyUsedCountMap = useMemo(() => {
     const countMap = new Map();
 
+    if (!isAuthenticated) return countMap;
+
     frequentlyUsedSops.forEach((item) => {
       const sopId = item?.id || getSopId(item?.sop);
       const copyCount = Number(item?.count) || 0;
@@ -1610,7 +1623,7 @@ function HomePage() {
     });
 
     return countMap;
-  }, [frequentlyUsedSops]);
+  }, [frequentlyUsedSops, isAuthenticated]);
   const searchQuery = searchInput.trim();
 
   const filteredArticles = useMemo(() => {
@@ -1645,6 +1658,11 @@ function HomePage() {
   );
 
   const loadFrequentlyUsedSops = useCallback(async () => {
+    if (!isAuthenticated) {
+      setFrequentlyUsedSops([]);
+      return;
+    }
+
     try {
       const frequentlyUsedData = await sopUsageService.getFrequentlyUsed();
       setFrequentlyUsedSops(frequentlyUsedData);
@@ -1652,10 +1670,14 @@ function HomePage() {
       console.warn("Gagal memuat urutan SOP populer.", error);
       setFrequentlyUsedSops([]);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     let isActive = true;
+
+    if (!isAuthenticated) {
+      return undefined;
+    }
 
     sopUsageService
       .getFrequentlyUsed()
@@ -1674,7 +1696,7 @@ function HomePage() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const handleShortcut = (event) => {
@@ -1809,6 +1831,11 @@ function HomePage() {
       setIsDeletingArticle(false);
     }
   };
+  const isLoginRequired = !isAuthLoading && !isAuthenticated;
+  const shouldShowArticleLoading = isAuthLoading || (isAuthenticated && isLoadingArticles);
+  const shouldShowArticleError = isAuthenticated && isErrorArticles;
+  const shouldShowArticleList =
+    isAuthenticated && !isLoadingArticles && !isErrorArticles && filteredArticles.length > 0;
 
   return (
     <>
@@ -1816,39 +1843,44 @@ function HomePage() {
         <aside className="border-r border-slate-200 bg-white lg:h-[calc(100vh-4rem)] lg:overflow-y-auto dark:border-slate-800 dark:bg-slate-950">
           <div className="sticky top-16 z-10 border-b border-slate-200 bg-white p-4 sm:p-5 lg:top-0 dark:border-slate-800 dark:bg-slate-950">
           <label className="block">
-            <span className="sr-only">Cari SOP</span>
+            <span className="sr-only">Ctrl + K</span>
             <input
               ref={searchInputRef}
               type="text"
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Cari SOP..."
+              placeholder="CTRL + K untuk mencari ..."
               className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-indigo-400 dark:focus:bg-slate-900 dark:focus:ring-indigo-500/20"
             />
           </label>
           </div>
 
           <div className="space-y-3 p-4 sm:p-5">
-          {isLoadingArticles && (
+          {shouldShowArticleLoading && (
             <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
-              {ARTICLE_MESSAGES.loadingList}
+              {isAuthLoading ? "Memeriksa sesi login..." : ARTICLE_MESSAGES.loadingList}
             </div>
           )}
 
-          {isErrorArticles && (
+          {isLoginRequired && (
+            <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4 text-sm font-semibold text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200">
+              Silakan login untuk membuka daftar SOP.
+            </div>
+          )}
+
+          {shouldShowArticleError && (
             <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
-              Gagal memuat data: {errorMsg}
+              Gagal memuat data: {errorMsg || "Sesi login sudah berakhir, silakan login kembali."}
             </div>
           )}
 
-          {!isLoadingArticles && !isErrorArticles && filteredArticles.length === 0 && (
+          {isAuthenticated && !isLoadingArticles && !isErrorArticles && filteredArticles.length === 0 && (
             <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
               {ARTICLE_MESSAGES.emptyList}
             </div>
           )}
 
-          {!isLoadingArticles &&
-            !isErrorArticles &&
+          {shouldShowArticleList &&
             filteredArticles.map((article) => {
               const sopId = getSopId(article);
 
@@ -1867,28 +1899,35 @@ function HomePage() {
         </aside>
 
         <section className="lg:h-[calc(100vh-4rem)] lg:overflow-y-auto">
-        {isLoadingArticles && (
+        {shouldShowArticleLoading && (
           <EmptyWorkspace
-            title="Memuat SOP"
-            message="Workspace akan tersedia setelah data selesai dimuat."
+            title={isAuthLoading ? "Memeriksa sesi" : "Memuat SOP"}
+            message={isAuthLoading ? "Kami sedang mengecek sesi login Anda." : "Workspace akan tersedia setelah data selesai dimuat."}
           />
         )}
 
-        {!isLoadingArticles && isErrorArticles && (
+        {isLoginRequired && (
+          <EmptyWorkspace
+            title="Login Diperlukan"
+            message="Masuk terlebih dahulu untuk membuka Buku SOP."
+          />
+        )}
+
+        {!shouldShowArticleLoading && shouldShowArticleError && (
           <EmptyWorkspace
             title="Data SOP belum tersedia"
-            message="Periksa koneksi API atau konfigurasi endpoint artikel."
+            message="Sesi login mungkin sudah berakhir. Silakan login kembali."
           />
         )}
 
-        {!isLoadingArticles && !isErrorArticles && !selectedArticle && (
+        {isAuthenticated && !isLoadingArticles && !isErrorArticles && !selectedArticle && (
           <EmptyWorkspace
             title="SOP tidak ditemukan"
             message="Coba gunakan kata kunci lain pada panel pencarian."
           />
         )}
 
-        {!isLoadingArticles && !isErrorArticles && selectedArticle && (
+        {isAuthenticated && !isLoadingArticles && !isErrorArticles && selectedArticle && (
           <SopWorkspace
             article={selectedArticle}
             canManage={userCanManageSop}
@@ -1913,7 +1952,12 @@ function HomePage() {
         onCancel={handleCancelDeleteArticle}
         onConfirm={handleConfirmDeleteArticle}
       />
-      <FloatingDrawerCounter />
+      {isAuthenticated && <FloatingDrawerCounter />}
+      <AuthModal
+        canClose={false}
+        isOpen={isLoginRequired}
+        message="Sesi login diperlukan untuk membuka Buku SOP."
+      />
     </>
   );
 }
@@ -1962,6 +2006,35 @@ function ImportantLinksPage() {
   );
 }
 
+function AdminProtectedRoute({ children }) {
+  const { loading } = useAuth();
+  const sessionQuery = useQuery({
+    queryKey: ["auth", "admin-route-session"],
+    enabled: !loading,
+    queryFn: () => authService.getCurrentUser(),
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+  });
+  const currentUser = sessionQuery.data;
+
+  if (loading || sessionQuery.isLoading || sessionQuery.isFetching) {
+    return (
+      <main className="min-h-[calc(100vh-4rem)] bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8 dark:bg-slate-950 dark:text-white">
+        <div className="mx-auto max-w-4xl rounded-lg border border-slate-200 bg-white p-6 text-sm font-semibold text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+          Memeriksa hak akses...
+        </div>
+      </main>
+    );
+  }
+
+  if (sessionQuery.isError || !canAccessAdminRoute(currentUser)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -1971,8 +2044,22 @@ function App() {
         <Route path="/analytics" element={<AnalyticsDashboard />} />
         <Route path="/edit/:id" element={<EditPage />} />
         <Route path="/sop/:id/edit" element={<EditPage />} />
-        <Route path="/admin/sop" element={<AdminSOPPage />} />
-        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+        <Route
+          path="/admin/sop"
+          element={
+            <AdminProtectedRoute>
+              <AdminSOPPage />
+            </AdminProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <AdminProtectedRoute>
+              <AdminDashboardPage />
+            </AdminProtectedRoute>
+          }
+        />
         <Route path="/cek-me" element={<CekMe />} />
         <Route path="/links" element={<ImportantLinksPage />} />
       </Routes>
