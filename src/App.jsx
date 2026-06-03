@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrowserRouter, Link, Route, Routes, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import Navbar from "./components/Navbar"; 
 import SanitizedHtmlRenderer from "./components/SanitizedHtmlRenderer";
 import EditPage from "./pages/EditPage";
 import AdminSOPPage from "./pages/AdminSOPPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 import CekMe from "./pages/cekMe";
 import { useAuth } from "./hooks/useAuth";
 import { useArticles } from "./hooks/useArticles";
@@ -13,6 +14,7 @@ import { ARTICLE_MESSAGES, ARTICLE_ROUTES } from "./lib/articleConstants";
 import { escapeRegExp, hasHtmlMarkup, htmlToPlainText } from "./lib/htmlUtils";
 import { articleService } from "./services/articleService";
 import { recordingService } from "./services/recordingService";
+import { sopUsageService } from "./services/sopUsageService";
 
 const NAME_PLACEHOLDER = "Nama Pelanggan";
 const GREETING_PLACEHOLDER = "Bapak/Ibu";
@@ -514,7 +516,7 @@ function HighlightedText({ className = "", query, text }) {
   );
 }
 
-function SopPreviewCard({ article, isSelected, onSelect, searchQuery }) {
+function SopPreviewCard({ article, isPopular = false, isSelected, onSelect, searchQuery }) {
   const category = getCategory(article);
   const conditions = getConditions(article);
   const handlingSteps = normalizeHandlingSteps(article);
@@ -534,10 +536,23 @@ function SopPreviewCard({ article, isSelected, onSelect, searchQuery }) {
       style={{ borderLeftColor: accentColor }}
     >
       <div className="flex min-w-0 flex-col gap-2">
-        <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{category}</p>
-        <h2 className={`line-clamp-2 text-base font-bold leading-snug ${titleClassName}`}>
-          <HighlightedText text={article?.title || "Tanpa judul SOP"} query={searchQuery} />
-        </h2>
+        <div className="flex min-w-0 items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{category}</p>
+            <h2 className={`mt-2 line-clamp-2 text-base font-bold leading-snug ${titleClassName}`}>
+              <HighlightedText text={article?.title || "Tanpa judul SOP"} query={searchQuery} />
+            </h2>
+          </div>
+          {isPopular && (
+            <span
+              aria-label="SOP populer"
+              className="shrink-0 rounded-full bg-orange-50 px-2 py-1 text-xs leading-none text-orange-600 ring-1 ring-orange-200 dark:bg-orange-500/10 dark:text-orange-200 dark:ring-orange-400/30"
+              title="SOP populer 24 jam terakhir"
+            >
+              🔥
+            </span>
+          )}
+        </div>
         <p className="text-sm text-slate-500 dark:text-slate-400">
           {conditions.length} kondisi / {handlingSteps.length} penanganan
         </p>
@@ -762,6 +777,7 @@ function SopWorkspace({
   const warningContent = getWarningContent(article);
   const warnings = warningContent.warnings;
   const keywordLabels = getKeywordLabels(article);
+  const sopId = getSopId(article);
   const accentColor = getLogTypeAccentColor(article);
   const titleClassName = getLogTypeTitleClass(article);
 
@@ -872,7 +888,7 @@ function SopWorkspace({
                   copiedStepId={copiedStepId}
                   customerGreeting={customerGreeting}
                   customerName={customerName}
-                  onCopy={onCopyTemplate}
+                  onCopy={(template, stepId) => onCopyTemplate(template, stepId, sopId)}
                   searchQuery={searchQuery}
                 />
               ))}
@@ -1552,6 +1568,7 @@ function HomePage() {
   const [customerGreeting, setCustomerGreeting] = useState("");
   const [copiedStepId, setCopiedStepId] = useState("");
   const [deleteTargetArticle, setDeleteTargetArticle] = useState(null);
+  const [frequentlyUsedSops, setFrequentlyUsedSops] = useState([]);
   const [isDeletingArticle, setIsDeletingArticle] = useState(false);
   const searchInputRef = useRef(null);
   const searchPulseTimeoutRef = useRef(null);
@@ -1563,15 +1580,35 @@ function HomePage() {
     () => (Array.isArray(loadedArticles) ? loadedArticles : []),
     [loadedArticles],
   );
+  const frequentlyUsedCountMap = useMemo(() => {
+    const countMap = new Map();
+
+    frequentlyUsedSops.forEach((item) => {
+      const sopId = item?.id || getSopId(item?.sop);
+      const copyCount = Number(item?.count) || 0;
+      if (!sopId || copyCount <= 0) return;
+
+      countMap.set(sopId, copyCount);
+    });
+
+    return countMap;
+  }, [frequentlyUsedSops]);
   const searchQuery = searchInput.trim();
 
   const filteredArticles = useMemo(() => {
     const normalizedSearch = searchQuery.toLowerCase();
+    const searchableArticles = normalizedSearch
+      ? articles.filter((article) => getSearchableText(article).includes(normalizedSearch))
+      : articles;
 
-    if (!normalizedSearch) return articles;
+    return [...searchableArticles].sort((firstArticle, secondArticle) => {
+      const firstCount = frequentlyUsedCountMap.get(getSopId(firstArticle)) || 0;
+      const secondCount = frequentlyUsedCountMap.get(getSopId(secondArticle)) || 0;
 
-    return articles.filter((article) => getSearchableText(article).includes(normalizedSearch));
-  }, [articles, searchQuery]);
+      if (firstCount !== secondCount) return secondCount - firstCount;
+      return articles.indexOf(firstArticle) - articles.indexOf(secondArticle);
+    });
+  }, [articles, frequentlyUsedCountMap, searchQuery]);
 
   const visibleSelectedArticleId = useMemo(() => {
     if (!filteredArticles.length) return "";
@@ -1588,6 +1625,38 @@ function HomePage() {
       filteredArticles.find((article) => getSopId(article) === visibleSelectedArticleId) || null,
     [filteredArticles, visibleSelectedArticleId],
   );
+
+  const loadFrequentlyUsedSops = useCallback(async () => {
+    try {
+      const frequentlyUsedData = await sopUsageService.getFrequentlyUsed();
+      setFrequentlyUsedSops(frequentlyUsedData);
+    } catch (error) {
+      console.warn("Gagal memuat urutan SOP populer.", error);
+      setFrequentlyUsedSops([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    sopUsageService
+      .getFrequentlyUsed()
+      .then((frequentlyUsedData) => {
+        if (isActive) {
+          setFrequentlyUsedSops(frequentlyUsedData);
+        }
+      })
+      .catch((error) => {
+        if (isActive) {
+          console.warn("Gagal memuat urutan SOP populer.", error);
+          setFrequentlyUsedSops([]);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   useEffect(() => {
     const handleShortcut = (event) => {
@@ -1657,11 +1726,17 @@ function HomePage() {
     visibleSelectedArticleId,
   ]);
 
-  const handleCopyTemplate = async (template, stepId) => {
+  const handleCopyTemplate = async (template, stepId, idSop) => {
     try {
       await writeClipboardText(template);
       setCopiedStepId(stepId);
       showToast("Template chat berhasil disalin.", "success");
+      sopUsageService
+        .logCopy(idSop)
+        .then(() => loadFrequentlyUsedSops())
+        .catch((error) => {
+          console.warn("Gagal mencatat copy SOP.", error);
+        });
 
       window.setTimeout(() => {
         setCopiedStepId((currentStepId) => (currentStepId === stepId ? "" : currentStepId));
@@ -1763,6 +1838,7 @@ function HomePage() {
                 <SopPreviewCard
                   key={sopId}
                   article={article}
+                  isPopular={frequentlyUsedCountMap.has(sopId)}
                   isSelected={sopId === visibleSelectedArticleId}
                   onSelect={() => setSelectedArticleId(sopId)}
                   searchQuery={searchQuery}
@@ -1833,7 +1909,7 @@ const IMPORTANT_LINKS = [
   {
     title: "Dashboard Admin",
     description: "Kelola template SOP dari halaman admin.",
-    to: "/admin/sop",
+    to: "/admin/dashboard",
   },
   {
     title: "Profile",
@@ -1878,6 +1954,7 @@ function App() {
         <Route path="/edit/:id" element={<EditPage />} />
         <Route path="/sop/:id/edit" element={<EditPage />} />
         <Route path="/admin/sop" element={<AdminSOPPage />} />
+        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
         <Route path="/cek-me" element={<CekMe />} />
         <Route path="/links" element={<ImportantLinksPage />} />
       </Routes>

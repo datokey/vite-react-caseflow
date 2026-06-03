@@ -12,11 +12,37 @@ const PRIMARY_LINKS = [
 ];
 
 const ADMIN_LINKS = [
-  { label: "Buat SOP", to: "/admin/sop" },
-  { label: "Profile", to: "/cek-me" },
+  { label: "Dashboard Admin", to: "/admin/dashboard", adminOnly: true },
+  { label: "Buat SOP", to: "/admin/sop", adminOnly: true },
 ];
 
 const getDisplayName = (user) => user?.username || user?.name || user?.email || "Pengguna";
+
+const normalizeRoleLabel = (value) => String(value || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+
+const getRoleText = (value) => {
+  if (!value || typeof value !== "object") return String(value || "").trim();
+  return value.role || value.name || value.value || value.title || value.label || "";
+};
+
+const canAccessAdminMenu = (user) => {
+  if (!user) return false;
+  if (user.isAdmin || user.isSuperAdmin || user.is_admin || user.is_super_admin) return true;
+
+  const roleSources = [
+    user.role,
+    user.userRole,
+    user.roleName,
+    user.type,
+    user.accessLevel,
+    ...(Array.isArray(user.roles) ? user.roles : []),
+  ];
+
+  return roleSources
+    .map(getRoleText)
+    .map(normalizeRoleLabel)
+    .some((role) => ["admin", "administrator", "super_admin", "superadmin"].includes(role));
+};
 
 const navLinkClass = ({ isActive }) =>
   [
@@ -142,6 +168,8 @@ const Navbar = () => {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const adminMenuRef = useRef(null);
+  const userCanAccessAdmin = canAccessAdminMenu(user);
+  const visibleAdminLinks = ADMIN_LINKS.filter((link) => !link.adminOnly || userCanAccessAdmin);
 
   const closeMenus = () => {
     setIsMobileOpen(false);
@@ -253,7 +281,7 @@ const Navbar = () => {
                   </div>
                 )}
 
-                {ADMIN_LINKS.map((link) => (
+                {visibleAdminLinks.map((link) => (
                   <NavLink
                     key={link.to}
                     to={link.to}
@@ -353,7 +381,7 @@ const Navbar = () => {
             <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
 
             <p className="px-3 pb-1 text-xs font-bold uppercase text-slate-400">Admin</p>
-            {ADMIN_LINKS.map((link) => (
+            {visibleAdminLinks.map((link) => (
               <NavLink key={link.to} to={link.to} className={mobileLinkClass} onClick={closeMenus}>
                 {link.label}
               </NavLink>

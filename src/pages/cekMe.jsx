@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-
-const AUTH_ME_ENDPOINT = import.meta.env.VITE_ENDPOINT_AUTH_ME || "/api/auth/me";
+import { authService } from "../services/authService";
 
 export default function CekMe() {
   const [user, setUser] = useState(null);
@@ -10,14 +9,8 @@ export default function CekMe() {
   useEffect(() => {
     let mounted = true;
 
-    fetch(AUTH_ME_ENDPOINT, { credentials: "include" })
-      .then(async (res) => {
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(text || res.statusText || "Failed to fetch");
-        }
-        return res.json();
-      })
+    authService
+      .getCurrentUser()
       .then((data) => {
         if (!mounted) return;
         setUser(data);
