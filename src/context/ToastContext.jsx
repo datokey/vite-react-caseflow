@@ -22,16 +22,31 @@ export const ToastProvider = ({ children }) => {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-3 px-4 pointer-events-none">
+      <style>{`
+        @keyframes slideInFromTop {
+          from {
+            opacity: 0;
+            transform: translateY(-16px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        .toast-notification {
+          animation: slideInFromTop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+      `}</style>
+      <div className="fixed top-20 right-4 z-50 flex flex-col items-end gap-3 px-4 pointer-events-none">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto w-full max-w-sm rounded-3xl border px-4 py-3 text-sm font-medium shadow-xl transition duration-200 ${
+            className={`pointer-events-auto w-full max-w-sm rounded-3xl border px-4 py-3 text-sm font-medium shadow-xl toast-notification ${
               toast.variant === "success"
-                ? "bg-emerald-50 text-emerald-800 border-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200"
+                ? "bg-emerald-500 text-white border-emerald-600 dark:bg-emerald-600 dark:border-emerald-700"
                 : toast.variant === "error"
-                ? "bg-rose-50 text-rose-800 border-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"
-                : "bg-slate-900 text-white border-slate-800 dark:bg-white dark:text-slate-950 dark:border-slate-200"
+                ? "bg-rose-500 text-white border-rose-600 dark:bg-rose-600 dark:border-rose-700"
+                : "bg-slate-900 text-white border-slate-800 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700"
             }`}
           >
             {toast.message}
