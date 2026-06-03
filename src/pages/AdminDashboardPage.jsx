@@ -87,31 +87,46 @@ function AdminDashboardSkeleton() {
 export default function AdminDashboardPage() {
   const { loading: isAuthLoading, user } = useAuth();
   const { showToast } = useToast();
+  const [searchInput, setSearchInput] = useState("");
+  const [submittedSearch, setSubmittedSearch] = useState("");
   const [isUpdatingRole, setIsUpdatingRole] = useState(false);
   const [roleTarget, setRoleTarget] = useState(null);
   const isAdmin = useMemo(() => canAccessAdminDashboard(user), [user]);
-  const dashboardQuery = useQuery({
-    queryKey: ["admin-dashboard"],
+  const searchQuery = submittedSearch.trim();
+  const summaryQuery = useQuery({
+    queryKey: ["admin-dashboard-summary"],
     enabled: !isAuthLoading && isAdmin,
     queryFn: async () => {
-      const [articles, userResult] = await Promise.all([
+      const [articles, allUsersResult] = await Promise.all([
         articleService.getArticles(),
         userService.getUsers(),
       ]);
 
       return {
         articleTotal: Array.isArray(articles) ? articles.length : 0,
-        users: userResult.users,
-        userTotal: userResult.total,
+        userTotal: allUsersResult.total,
       };
     },
     refetchOnWindowFocus: false,
   });
+  const userListQuery = useQuery({
+    queryKey: ["admin-dashboard-users", searchQuery],
+    enabled: !isAuthLoading && isAdmin,
+    queryFn: () => (searchQuery ? userService.searchUsers(searchQuery) : userService.getUsers()),
+    placeholderData: (previousData) => previousData,
+    refetchOnWindowFocus: false,
+  });
 
-  const articleTotal = dashboardQuery.data?.articleTotal ?? 0;
-  const users = dashboardQuery.data?.users ?? [];
-  const userTotal = dashboardQuery.data?.userTotal ?? 0;
-  const isLoading = dashboardQuery.isLoading || dashboardQuery.isFetching;
+  const articleTotal = summaryQuery.data?.articleTotal ?? 0;
+  const users = userListQuery.data?.users ?? [];
+  const userTotal = summaryQuery.data?.userTotal ?? 0;
+  const isLoading = summaryQuery.isLoading || (userListQuery.isLoading && !userListQuery.data);
+  const isSearchingUsers = userListQuery.isFetching && !isLoading;
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    setSubmittedSearch(searchInput.trim());
+  };
 
   const handleConfirmPromote = async () => {
     const target = roleTarget;
@@ -128,7 +143,7 @@ export default function AdminDashboardPage() {
       await userService.updateUserRole(targetId, "admin");
       showToast(`${getUserName(target)} berhasil diubah menjadi admin.`, "success");
       setRoleTarget(null);
-      await dashboardQuery.refetch();
+      await Promise.all([summaryQuery.refetch(), userListQuery.refetch()]);
     } catch (error) {
       showToast(error?.message || "Gagal mengubah role user.", "error");
     } finally {
@@ -178,9 +193,9 @@ export default function AdminDashboardPage() {
             </p>
           </div>
 
-          {dashboardQuery.isError && (
+          {(summaryQuery.isError || userListQuery.isError) && (
             <div className="mb-6 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
-              {dashboardQuery.error?.message || "Gagal memuat dashboard admin."}
+              {summaryQuery.error?.message || userListQuery.error?.message || "Gagal memuat dashboard admin."}
             </div>
           )}
 
@@ -190,12 +205,41 @@ export default function AdminDashboardPage() {
           </div>
 
           <section className="mt-6 rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="border-b border-slate-200 px-5 py-4 dark:border-slate-800">
-              <h2 className="text-lg font-black">Manajemen Role User</h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Ubah user biasa menjadi admin dengan konfirmasi.
-              </p>
+            <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-end sm:justify-between dark:border-slate-800">
+              <div>
+                <h2 className="text-lg font-black">Manajemen Role User</h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  Ubah user biasa menjadi admin dengan konfirmasi.
+                </p>
+              </div>
+
+              <form className="flex w-full flex-col gap-2 sm:max-w-md sm:flex-row" onSubmit={handleSearchSubmit}>
+                <label className="min-w-0 flex-1">
+                  <span className="sr-only">Cari nama user</span>
+                  <input
+                    type="search"
+                    value={searchInput}
+                    onChange={(event) => setSearchInput(event.target.value)}
+                    placeholder="Cari nama user..."
+                    className="h-10 w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-400 dark:focus:bg-slate-900 dark:focus:ring-indigo-500/20 dark:[color-scheme:dark]"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  className="inline-flex h-10 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
+                >
+                  Cari
+                </button>
+              </form>
             </div>
+
+            {searchQuery && (
+              <div className="border-b border-slate-100 px-5 py-3 text-xs font-semibold text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                {isSearchingUsers
+                  ? `Mencari "${searchQuery}"...`
+                  : `Hasil pencarian untuk "${searchQuery}"`}
+              </div>
+            )}
 
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
@@ -211,7 +255,9 @@ export default function AdminDashboardPage() {
                   {users.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-5 py-8 text-center text-slate-500 dark:text-slate-400">
-                        Belum ada data user/agen.
+                        {searchQuery
+                          ? `Tidak ada user/agen yang cocok dengan "${searchQuery}".`
+                          : "Belum ada data user/agen."}
                       </td>
                     </tr>
                   ) : (
