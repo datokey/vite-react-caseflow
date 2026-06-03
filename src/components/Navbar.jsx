@@ -4,9 +4,10 @@ import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
 import { useToast } from "../hooks/useToast";
 import AuthModal from "./AuthModal.jsx";
+import { TiFlowChildren } from "react-icons/ti";
 
 const PRIMARY_LINKS = [
-  { label: "Beranda", to: "/" }, 
+  { label: "Beranda", to: "/" },
   { label: "Statistik Kerja", to: "/analytics" },
   { label: "Link Penting", to: "/links" },
 ];
@@ -16,18 +17,26 @@ const ADMIN_LINKS = [
   { label: "Buat SOP", to: "/admin/sop", adminOnly: true },
 ];
 
-const getDisplayName = (user) => user?.username || user?.name || user?.email || "Pengguna";
+const getDisplayName = (user) =>
+  user?.username || user?.name || user?.email || "Pengguna";
 
-const normalizeRoleLabel = (value) => String(value || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+const normalizeRoleLabel = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
 
 const getRoleText = (value) => {
   if (!value || typeof value !== "object") return String(value || "").trim();
-  return value.role || value.name || value.value || value.title || value.label || "";
+  return (
+    value.role || value.name || value.value || value.title || value.label || ""
+  );
 };
 
 const canAccessAdminMenu = (user) => {
   if (!user) return false;
-  if (user.isAdmin || user.isSuperAdmin || user.is_admin || user.is_super_admin) return true;
+  if (user.isAdmin || user.isSuperAdmin || user.is_admin || user.is_super_admin)
+    return true;
 
   const roleSources = [
     user.role,
@@ -169,7 +178,9 @@ const Navbar = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const adminMenuRef = useRef(null);
   const userCanAccessAdmin = canAccessAdminMenu(user);
-  const visibleAdminLinks = ADMIN_LINKS.filter((link) => !link.adminOnly || userCanAccessAdmin);
+  const visibleAdminLinks = ADMIN_LINKS.filter(
+    (link) => !link.adminOnly || userCanAccessAdmin,
+  );
 
   const closeMenus = () => {
     setIsMobileOpen(false);
@@ -190,7 +201,10 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (adminMenuRef.current && !adminMenuRef.current.contains(event.target)) {
+      if (
+        adminMenuRef.current &&
+        !adminMenuRef.current.contains(event.target)
+      ) {
         setIsAdminOpen(false);
       }
     };
@@ -219,7 +233,9 @@ const Navbar = () => {
           <button
             type="button"
             onClick={toggleTheme}
-            aria-label={isDarkMode ? "Aktifkan light mode" : "Aktifkan dark mode"}
+            aria-label={
+              isDarkMode ? "Aktifkan light mode" : "Aktifkan dark mode"
+            }
             data-testid="theme-toggle-loading"
             className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
           >
@@ -239,15 +255,23 @@ const Navbar = () => {
             onClick={closeMenus}
             className="inline-flex items-center gap-2 text-xl font-black text-indigo-600 dark:text-indigo-300"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-sm font-black text-white shadow-sm dark:bg-indigo-500">
-              SOP
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 shadow-lg shadow-indigo-500/25 dark:bg-indigo-500 dark:shadow-indigo-900/40">
+        <TiFlowChildren className="h-5 w-5 text-white" />
+      </div>
+            <span className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">
+              Case
+              <span className="text-indigo-600 dark:text-indigo-300">Flow</span>
             </span>
-            <span className="text-slate-950 dark:text-white">NulisKode</span>
           </Link>
 
           <div className="hidden items-center gap-1 md:flex">
             {PRIMARY_LINKS.map((link) => (
-              <NavLink key={link.to} to={link.to} className={navLinkClass} end={link.to === "/"}>
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className={navLinkClass}
+                end={link.to === "/"}
+              >
                 {link.label}
               </NavLink>
             ))}
@@ -258,7 +282,9 @@ const Navbar = () => {
                   type="button"
                   aria-haspopup="menu"
                   aria-expanded={isAdminOpen}
-                  onClick={() => setIsAdminOpen((currentValue) => !currentValue)}
+                  onClick={() =>
+                    setIsAdminOpen((currentValue) => !currentValue)
+                  }
                   className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus:ring-offset-slate-950"
                 >
                   Admin
@@ -300,7 +326,9 @@ const Navbar = () => {
             <button
               type="button"
               onClick={toggleTheme}
-              aria-label={isDarkMode ? "Aktifkan light mode" : "Aktifkan dark mode"}
+              aria-label={
+                isDarkMode ? "Aktifkan light mode" : "Aktifkan dark mode"
+              }
               data-testid="theme-toggle-desktop"
               title={isDarkMode ? "Light mode" : "Dark mode"}
               className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white dark:focus:ring-offset-slate-950"
@@ -315,7 +343,9 @@ const Navbar = () => {
                   className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
                   <UserIcon />
-                  <span className="max-w-36 truncate">{getDisplayName(user)}</span>
+                  <span className="max-w-36 truncate">
+                    {getDisplayName(user)}
+                  </span>
                 </Link>
                 <button
                   type="button"
@@ -369,9 +399,16 @@ const Navbar = () => {
               <>
                 <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
 
-                <p className="px-3 pb-1 text-xs font-bold uppercase text-slate-400">Admin</p>
+                <p className="px-3 pb-1 text-xs font-bold uppercase text-slate-400">
+                  Admin
+                </p>
                 {visibleAdminLinks.map((link) => (
-                  <NavLink key={link.to} to={link.to} className={mobileLinkClass} onClick={closeMenus}>
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    className={mobileLinkClass}
+                    onClick={closeMenus}
+                  >
                     {link.label}
                   </NavLink>
                 ))}
@@ -381,7 +418,9 @@ const Navbar = () => {
             <button
               type="button"
               onClick={toggleTheme}
-              aria-label={isDarkMode ? "Aktifkan light mode" : "Aktifkan dark mode"}
+              aria-label={
+                isDarkMode ? "Aktifkan light mode" : "Aktifkan dark mode"
+              }
               data-testid="theme-toggle-mobile"
               className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
             >
@@ -392,7 +431,8 @@ const Navbar = () => {
             {user ? (
               <>
                 <div className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                  Halo, <span className="font-semibold">{getDisplayName(user)}</span>
+                  Halo,{" "}
+                  <span className="font-semibold">{getDisplayName(user)}</span>
                 </div>
                 <button
                   type="button"
