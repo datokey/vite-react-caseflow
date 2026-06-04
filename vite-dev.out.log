@@ -1,0 +1,57 @@
+
+> my-website@0.0.0 dev
+> vite --host 127.0.0.1 --port 5173
+
+Port 5173 is in use, trying another one...
+
+  [32m[1mVITE[22m v8.0.12[39m  [2mready in [0m[1m556[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5174[22m/[39m
+[2m9:23:23 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/components/editor/RichTextEditor.jsx[22m
+[2m9:23:23 PM[22m [36m[1m[vite][22m[39m [32m.env changed, restarting server...[39m
+Port 5174 is in use, trying another one...
+[2m9:23:23 PM[22m [36m[1m[vite][22m[39m server restarted.
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5175[22m/[39m
+[2m9:43:03 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/pages/CreateArticlePage.jsx, /src/pages/EditPage.jsx, /src/assets/index.css[22m
+[2m9:43:03 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/pages/CreateArticlePage.jsx, /src/pages/EditPage.jsx, /src/assets/index.css[22m
+[2m9:43:03 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/pages/CreateArticlePage.jsx[22m
+[2m9:43:03 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/pages/EditPage.jsx[22m
+[2m9:43:11 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/CreateArticlePage.jsx, /src/assets/index.css[22m
+[2m9:43:11 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/EditPage.jsx, /src/assets/index.css[22m
+[2m9:43:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/components/articles/ArticleForm.jsx[22m
+[2m9:43:41 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/components/articles/ArticleForm.jsx[22m
+[2m9:46:47 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/pages/CreateArticlePage.jsx, /src/pages/EditPage.jsx, /src/assets/index.css[22m
+[2m9:46:47 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/pages/CreateArticlePage.jsx[22m
+[2m9:46:47 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/EditPage.jsx, /src/assets/index.css[22m
+[2m9:46:47 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/pages/CreateArticlePage.jsx, /src/pages/EditPage.jsx, /src/assets/index.css[22m
+[2m9:46:47 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/components/articles/ArticleForm.jsx[22m
+[2m9:46:47 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/pages/EditPage.jsx[22m
+[2m9:46:47 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/CreateArticlePage.jsx, /src/assets/index.css[22m
+[2m9:58:43 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/pages/CreateArticlePage.jsx, /src/pages/EditPage.jsx, /src/assets/index.css[22m
+[2m9:58:46 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/pages/CreateArticlePage.jsx, /src/pages/EditPage.jsx, /src/assets/index.css[22m
+[2m9:58:51 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/pages/CreateArticlePage.jsx, /src/pages/EditPage.jsx, /src/assets/index.css[22m
+[2m9:58:54 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/pages/CreateArticlePage.jsx[22m
+[2m9:58:57 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/pages/CreateArticlePage.jsx[22m
+[2m9:59:00 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/pages/EditPage.jsx[22m
+[2m9:59:07 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/pages/EditPage.jsx[22m
+[2m9:59:11 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/CreateArticlePage.jsx, /src/assets/index.css[22m
+[2m9:59:15 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/CreateArticlePage.jsx, /src/assets/index.css[22m
+[2m9:59:18 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/EditPage.jsx, /src/assets/index.css[22m
+[2m9:59:21 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/EditPage.jsx, /src/assets/index.css[22m
+[2m9:59:25 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/components/articles/ArticleForm.jsx[22m
+[2m9:59:32 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/components/articles/ArticleForm.jsx[22m
+[2m9:59:36 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/pages/CreateArticlePage.jsx[22m
+[2m10:11:09 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/components/articles/ArticleForm.jsx[22m
+[2m10:18:11 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/pages/CreateArticlePage.jsx[22m
+[2m10:18:21 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/pages/CreateArticlePage.jsx[22m
+[2m10:18:27 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/pages/CreateArticlePage.jsx[22m
+[2m10:18:33 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/pages/EditPage.jsx[22m
+[2m10:18:38 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/pages/EditPage.jsx[22m
+[2m10:18:44 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/pages/EditPage.jsx[22m
+[2m10:18:48 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/CreateArticlePage.jsx, /src/assets/index.css[22m
+[2m10:18:54 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/CreateArticlePage.jsx, /src/assets/index.css[22m
+[2m10:19:00 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/EditPage.jsx, /src/assets/index.css[22m
+[2m10:19:05 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/EditPage.jsx, /src/assets/index.css[22m
+[2m10:19:11 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/components/articles/ArticleForm.jsx[22m
+[2m10:19:18 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/index.css, /src/components/articles/ArticleForm.jsx[22m
