@@ -3,6 +3,7 @@ import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AuthModal from "./components/AuthModal";
 import Navbar from "./components/Navbar"; 
+import QuickNotesDrawer from "./components/QuickNotesDrawer";
 import SanitizedHtmlRenderer from "./components/SanitizedHtmlRenderer";
 import EditPage from "./pages/EditPage";
 import AdminSOPPage from "./pages/AdminSOPPage";
@@ -1977,6 +1978,7 @@ function HomePage() {
         onConfirm={handleConfirmDeleteArticle}
       />
       {isAuthenticated && <FloatingDrawerCounter />}
+      {isAuthenticated && <QuickNotesDrawer />}
       <AuthModal
         canClose={false}
         isOpen={isLoginRequired}
