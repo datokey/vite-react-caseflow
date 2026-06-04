@@ -108,6 +108,12 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    const currentUser = await authService.getCurrentUser();
+    setUser(currentUser);
+    return currentUser;
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await authService.logout();
@@ -121,8 +127,8 @@ export const AuthProvider = ({ children }) => {
   }, [queryClient]);
 
   const value = useMemo(
-    () => ({ user, loading, login, logout, register, authenticating }),
-    [user, loading, login, logout, register, authenticating],
+    () => ({ user, loading, login, logout, refreshUser, register, authenticating }),
+    [user, loading, login, logout, refreshUser, register, authenticating],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

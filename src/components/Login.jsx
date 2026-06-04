@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useToast } from "../hooks/useToast";
+import { isPasswordChangeRequired } from "../lib/authUtils";
 
 const LOGIN_FORM = {
   email: "",
@@ -34,6 +36,7 @@ const getFriendlyAuthError = (message, fallback) => {
 const Login = ({ setCloseModal }) => {
   const { login, register } = useAuth();
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const [mode, setMode] = useState("login");
   const [loginForm, setLoginForm] = useState(LOGIN_FORM);
   const [registerForm, setRegisterForm] = useState(REGISTER_FORM);
@@ -72,7 +75,12 @@ const Login = ({ setCloseModal }) => {
     const result = await login(loginForm);
 
     if (result.success) {
-      showToast("Login berhasil.", "success");
+      if (isPasswordChangeRequired(result.user)) {
+        showToast("Login berhasil. Silakan ganti password terlebih dahulu.", "success");
+        navigate("/cek-me", { replace: true });
+      } else {
+        showToast("Login berhasil.", "success");
+      }
       setLoginForm(LOGIN_FORM);
       setCloseModal?.();
     } else {

@@ -9,7 +9,6 @@ import { TiFlowChildren } from "react-icons/ti";
 const PRIMARY_LINKS = [
   { label: "Beranda", to: "/" },
   { label: "Statistik Kerja", to: "/analytics" },
-  { label: "Link Penting", to: "/links" },
 ];
 
 const ADMIN_LINKS = [

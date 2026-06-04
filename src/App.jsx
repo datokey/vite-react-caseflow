@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AuthModal from "./components/AuthModal";
 import Navbar from "./components/Navbar"; 
@@ -12,6 +12,7 @@ import { useAuth } from "./hooks/useAuth";
 import { useArticles } from "./hooks/useArticles";
 import { useToast } from "./hooks/useToast";
 import { ARTICLE_MESSAGES, ARTICLE_ROUTES } from "./lib/articleConstants";
+import { isPasswordChangeRequired } from "./lib/authUtils";
 import { escapeRegExp, hasHtmlMarkup, htmlToPlainText } from "./lib/htmlUtils";
 import { articleService } from "./services/articleService";
 import { authService } from "./services/authService";
@@ -24,6 +25,7 @@ const SEARCH_HIGHLIGHT_MARK_CLASS = "sop-search-highlight";
 const SEARCH_HIGHLIGHT_PULSE_CLASS = "sop-search-highlight-pulse";
 const SEARCH_HIGHLIGHT_CLASS =
   `${SEARCH_HIGHLIGHT_MARK_CLASS} rounded bg-amber-200/80 px-0.5 text-slate-950 ring-1 ring-amber-300/70 dark:bg-sky-400/30 dark:text-sky-50 dark:ring-sky-300/30`;
+const LAST_SELECTED_SOP_STORAGE_KEY = "lastSelectedSopId";
 const TEMPLATE_NAME_PATTERN =
   /\{\{\s*(nama|nama_pelanggan|namaPelanggan|customerName|customer_name|pelanggan)\s*\}\}|\{\s*(nama|nama_pelanggan|namaPelanggan|customerName|customer_name|pelanggan)\s*\}|\[\s*(nama|nama pelanggan|customer name|customerName|customer_name|pelanggan)\s*\]|<<\s*(nama|nama pelanggan|customer name|customerName|customer_name|pelanggan)\s*>>/gi;
 const TEMPLATE_GREETING_PATTERN =
@@ -144,6 +146,16 @@ const getFirstValue = (source, keys) => {
 const getSopId = (article) => {
   const id = toText(article?._id) || toText(article?.id);
   return id || article?.title || "";
+};
+
+const getLastSelectedSopId = () => {
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem(LAST_SELECTED_SOP_STORAGE_KEY) || "";
+};
+
+const saveLastSelectedSopId = (sopId) => {
+  if (typeof window === "undefined" || !sopId) return;
+  window.localStorage.setItem(LAST_SELECTED_SOP_STORAGE_KEY, sopId);
 };
 
 const getAuthorName = (article) =>
@@ -1592,7 +1604,7 @@ function HomePage() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [searchInput, setSearchInput] = useState("");
-  const [selectedArticleId, setSelectedArticleId] = useState("");
+  const [selectedArticleId, setSelectedArticleId] = useState(() => getLastSelectedSopId());
   const [customerName, setCustomerName] = useState("");
   const [customerGreeting, setCustomerGreeting] = useState("");
   const [copiedStepId, setCopiedStepId] = useState("");
@@ -1656,6 +1668,12 @@ function HomePage() {
       filteredArticles.find((article) => getSopId(article) === visibleSelectedArticleId) || null,
     [filteredArticles, visibleSelectedArticleId],
   );
+
+  const handleSelectArticle = useCallback((sopId) => {
+    if (!sopId) return;
+    saveLastSelectedSopId(sopId);
+    setSelectedArticleId(sopId);
+  }, []);
 
   const loadFrequentlyUsedSops = useCallback(async () => {
     if (!isAuthenticated) {
@@ -1821,7 +1839,13 @@ function HomePage() {
       await articleService.deleteArticle(targetId);
 
       const nextArticle = filteredArticles.find((article) => getSopId(article) !== targetId);
-      setSelectedArticleId(nextArticle ? getSopId(nextArticle) : "");
+      const nextArticleId = nextArticle ? getSopId(nextArticle) : "";
+      setSelectedArticleId(nextArticleId);
+      if (nextArticleId) {
+        saveLastSelectedSopId(nextArticleId);
+      } else if (typeof window !== "undefined") {
+        window.localStorage.removeItem(LAST_SELECTED_SOP_STORAGE_KEY);
+      }
       setDeleteTargetArticle(null);
       showToast(ARTICLE_MESSAGES.deleteSuccess, "success");
       await queryClient.invalidateQueries({ queryKey: ["articles"] });
@@ -1890,7 +1914,7 @@ function HomePage() {
                   article={article}
                   isPopular={frequentlyUsedCountMap.has(sopId)}
                   isSelected={sopId === visibleSelectedArticleId}
-                  onSelect={() => setSelectedArticleId(sopId)}
+                  onSelect={() => handleSelectArticle(sopId)}
                   searchQuery={searchQuery}
                 />
               );
@@ -2035,10 +2059,22 @@ function AdminProtectedRoute({ children }) {
   return children;
 }
 
+function PasswordChangeRequiredGuard() {
+  const { loading, user } = useAuth();
+  const location = useLocation();
+
+  if (!loading && isPasswordChangeRequired(user) && location.pathname !== "/cek-me") {
+    return <Navigate to="/cek-me" replace />;
+  }
+
+  return null;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <Navbar />
+      <PasswordChangeRequiredGuard />
       <Routes>
         <Route path="/" element={<HomePage />} /> 
         <Route path="/analytics" element={<AnalyticsDashboard />} />

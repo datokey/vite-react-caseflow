@@ -45,6 +45,31 @@ const canAccessAdminDashboard = (user) => {
     .some((role) => ["admin", "administrator", "super_admin", "superadmin"].includes(role));
 };
 
+const canResetUserPassword = (user) => {
+  if (!user) return false;
+  if (user.isSuperAdmin || user.is_super_admin) return true;
+
+  const roleSources = [
+    user.role,
+    user.userRole,
+    user.roleName,
+    user.type,
+    user.accessLevel,
+    ...(Array.isArray(user.roles) ? user.roles : []),
+  ];
+
+  return roleSources
+    .map(roleValueToText)
+    .map(normalizeRoleLabel)
+    .some((role) => ["super_admin", "superadmin"].includes(role));
+};
+
+const getTemporaryPassword = (response) =>
+  toText(response?.data?.temporaryPassword) ||
+  toText(response?.temporaryPassword) ||
+  toText(response?.data?.password) ||
+  toText(response?.password);
+
 const getUserId = (user) => toText(user?._id?.$oid) || toText(user?._id) || toText(user?.id);
 
 const getUserName = (user) =>
@@ -91,7 +116,12 @@ export default function AdminDashboardPage() {
   const [submittedSearch, setSubmittedSearch] = useState("");
   const [isUpdatingRole, setIsUpdatingRole] = useState(false);
   const [roleTarget, setRoleTarget] = useState(null);
+  const [resetTarget, setResetTarget] = useState(null);
+  const [resetPasswordError, setResetPasswordError] = useState("");
+  const [resetResultPassword, setResetResultPassword] = useState("");
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const isAdmin = useMemo(() => canAccessAdminDashboard(user), [user]);
+  const isSuperadmin = useMemo(() => canResetUserPassword(user), [user]);
   const searchQuery = submittedSearch.trim();
   const summaryQuery = useQuery({
     queryKey: ["admin-dashboard-summary"],
@@ -148,6 +178,65 @@ export default function AdminDashboardPage() {
       showToast(error?.message || "Gagal mengubah role user.", "error");
     } finally {
       setIsUpdatingRole(false);
+    }
+  };
+
+  const handleOpenResetPassword = (target) => {
+    setResetTarget(target);
+    setResetPasswordError("");
+    setResetResultPassword("");
+  };
+
+  const handleCloseResetPassword = () => {
+    if (isResettingPassword) return;
+    setResetTarget(null);
+    setResetPasswordError("");
+    setResetResultPassword("");
+  };
+
+  const handleResetPasswordSubmit = async () => {
+    setResetPasswordError("");
+
+    if (!isSuperadmin) {
+      setResetPasswordError("Hanya superadmin yang dapat mereset password user.");
+      return;
+    }
+
+    const targetId = getUserId(resetTarget);
+
+    if (!targetId) {
+      setResetPasswordError("ID user tidak ditemukan.");
+      return;
+    }
+
+    try {
+      setIsResettingPassword(true);
+      const response = await userService.resetUserPassword(targetId);
+      const temporaryPassword = getTemporaryPassword(response);
+
+      setResetResultPassword(temporaryPassword);
+      showToast(`Password ${getUserName(resetTarget)} berhasil direset.`, "success");
+      await userListQuery.refetch();
+
+      if (!temporaryPassword) {
+        setResetTarget(null);
+      }
+    } catch (error) {
+      setResetPasswordError(error?.message || "Gagal mereset password user.");
+      showToast(error?.message || "Gagal mereset password user.", "error");
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  const handleCopyResetPassword = async () => {
+    if (!resetResultPassword) return;
+
+    try {
+      await navigator.clipboard.writeText(resetResultPassword);
+      showToast("Password sementara berhasil disalin.", "success");
+    } catch {
+      showToast("Gagal menyalin password sementara.", "error");
     }
   };
 
@@ -276,7 +365,17 @@ export default function AdminDashboardPage() {
                               {role}
                             </span>
                           </td>
-                          <td className="px-5 py-4 text-right">
+                          <td className="px-5 py-4">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                              {isSuperadmin && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenResetPassword(item)}
+                                  className="inline-flex h-9 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 text-xs font-bold text-amber-700 transition hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20"
+                                >
+                                  Reset Password
+                                </button>
+                              )}
                             <button
                               type="button"
                               disabled={isAlreadyAdmin}
@@ -285,6 +384,7 @@ export default function AdminDashboardPage() {
                             >
                               {isAlreadyAdmin ? "Sudah Admin" : "Jadikan Admin"}
                             </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -325,6 +425,86 @@ export default function AdminDashboardPage() {
                 {isUpdatingRole ? "Memproses..." : "Ya, Jadikan Admin"}
               </button>
             </div>
+          </section>
+        </div>
+      )}
+
+      {resetTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+          <section className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+            <p className="text-sm font-black uppercase text-amber-600 dark:text-amber-300">Reset Password</p>
+            <h2 className="mt-2 text-xl font-black text-slate-950 dark:text-white">
+              Reset password {getUserName(resetTarget)}
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              Backend akan membuat password sementara otomatis. Berikan password sementara tersebut kepada user melalui kanal yang aman.
+            </p>
+
+            {resetPasswordError && (
+              <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
+                {resetPasswordError}
+              </div>
+            )}
+
+            {resetResultPassword ? (
+              <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+                <p className="text-xs font-black uppercase text-emerald-700 dark:text-emerald-200">
+                  Password sementara dari backend
+                </p>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <code className="min-w-0 flex-1 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-bold text-emerald-800 dark:border-emerald-500/30 dark:bg-slate-950 dark:text-emerald-100">
+                    {resetResultPassword}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={handleCopyResetPassword}
+                    className="inline-flex h-10 items-center justify-center rounded-lg bg-emerald-600 px-4 text-sm font-bold text-white transition hover:bg-emerald-700"
+                  >
+                    Salin
+                  </button>
+                </div>
+                <p className="mt-3 text-xs leading-5 text-emerald-700 dark:text-emerald-200">
+                  User perlu login dengan password sementara ini, lalu mengganti password sesuai alur backend.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-5 space-y-4">
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs font-semibold leading-5 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                  User akan wajib mengganti password setelah login menggunakan password sementara.
+                </div>
+
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    disabled={isResettingPassword}
+                    onClick={handleCloseResetPassword}
+                    className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isResettingPassword}
+                    onClick={handleResetPasswordSubmit}
+                    className="inline-flex h-10 items-center justify-center rounded-lg bg-amber-600 px-4 text-sm font-bold text-white transition hover:bg-amber-700 disabled:cursor-wait disabled:bg-amber-400"
+                  >
+                    {isResettingPassword ? "Mereset..." : "Reset Password"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {resetResultPassword && (
+              <div className="mt-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleCloseResetPassword}
+                  className="inline-flex h-10 items-center justify-center rounded-lg bg-slate-950 px-4 text-sm font-bold text-white transition hover:bg-slate-700 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+                >
+                  Selesai
+                </button>
+              </div>
+            )}
           </section>
         </div>
       )}
