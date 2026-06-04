@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useToast } from "../hooks/useToast";
 import { isPasswordChangeRequired } from "../lib/authUtils";
+import { ADMIN_CONFIG } from "../lib/adminConfig";
 
 const LOGIN_FORM = {
   email: "",
@@ -33,6 +34,12 @@ const getFriendlyAuthError = (message, fallback) => {
   return message || fallback;
 };
 
+const getForgotPasswordTelegramUrl = (email) => {
+  const accountEmail = email.trim() || "[email akun Anda]";
+  const message = `Lupa password untuk akun Email : ${accountEmail}`;
+  return `https://t.me/${ADMIN_CONFIG.telegramUsername}?text=${encodeURIComponent(message)}`;
+};
+
 const Login = ({ setCloseModal }) => {
   const { login, register } = useAuth();
   const { showToast } = useToast();
@@ -44,6 +51,7 @@ const Login = ({ setCloseModal }) => {
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isRegisterMode = mode === "register";
+  const forgotPasswordUrl = getForgotPasswordTelegramUrl(loginForm.email);
 
   const handleLoginChange = (event) => {
     const { name, value } = event.target;
@@ -270,6 +278,18 @@ const Login = ({ setCloseModal }) => {
           >
             {isSubmitting ? "Memproses..." : "Masuk"}
           </button>
+
+          <div className="text-center text-xs text-slate-500 dark:text-slate-400">
+            Lupa password?{" "}
+            <a
+              href={forgotPasswordUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="font-bold text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200"
+            >
+              Hubungi admin via Telegram
+            </a>
+          </div>
         </form>
       )}
 
