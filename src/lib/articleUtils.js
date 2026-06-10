@@ -2,6 +2,11 @@ import {
   ARTICLE_DATE_LOCALE,
   EMPTY_ARTICLE_FORM,
 } from "./articleConstants";
+import {
+  buildHandlingStepPayload,
+  createEmptyHandlingStep,
+  normalizeHandlingStepForForm,
+} from "./handlingItems";
 import { normalizeKeyword, toKeywordPayload } from "./keywordUtils";
 
 export const getArticleId = (article) => article?._id || article?.id;
@@ -55,58 +60,20 @@ const normalizeTextLines = (value) => {
   return [];
 };
 
-const HTML_TAG_PATTERN = /<\/?[a-z][\s\S]*>/i;
-const hasHtmlMarkup = (value = "") => HTML_TAG_PATTERN.test(String(value || ""));
-
-const normalizeInstructionPayload = (value) => {
-  if (Array.isArray(value)) {
-    const cleanedItems = value.map((item) => String(item || "").trim()).filter(Boolean);
-
-    if (cleanedItems.length === 1 && hasHtmlMarkup(cleanedItems[0])) {
-      return [cleanedItems[0]];
-    }
-
-    return cleanedItems;
-  }
-
-  if (typeof value === "string" && hasHtmlMarkup(value)) {
-    return value.trim() ? [value.trim()] : [];
-  }
-
-  return normalizeTextLines(value);
-};
-
-const EMPTY_HANDLING_STEP = {
-  judulPenanganan: "",
-  instruksiInternal: "",
-  templateChat: "",
-};
-
-const mapHandlingStepToForm = (step = {}) => ({
-  _id: step?._id || step?.id,
-  judulPenanganan: step?.judulPenanganan || "",
-  instruksiInternal: Array.isArray(step?.instruksiInternal)
-    ? step.instruksiInternal.length === 1 && hasHtmlMarkup(step.instruksiInternal[0])
-      ? step.instruksiInternal[0]
-      : step.instruksiInternal.join("\n")
-    : step?.instruksiInternal || "",
-  templateChat: step?.templateChat || "",
-});
-
 const mapHandlingToForm = (penanganan) => {
   if (Array.isArray(penanganan) && penanganan.length > 0) {
-    return penanganan.map(mapHandlingStepToForm);
+    return penanganan.map(normalizeHandlingStepForForm);
   }
 
   if (penanganan && typeof penanganan === "object") {
-    return [mapHandlingStepToForm(penanganan)];
+    return [normalizeHandlingStepForForm(penanganan)];
   }
 
   if (typeof penanganan === "string" && penanganan.trim()) {
-    return [{ ...EMPTY_HANDLING_STEP, judulPenanganan: penanganan.trim() }];
+    return [{ ...createEmptyHandlingStep(), judulPenanganan: penanganan.trim() }];
   }
 
-  return [{ ...EMPTY_HANDLING_STEP }];
+  return [createEmptyHandlingStep()];
 };
 
 const getCatatanValue = (details = {}) =>
@@ -163,16 +130,13 @@ export const buildArticleSavePayload = (formData) => {
   const catatan = getCatatanValue(formData.details) || "Tidak ada catatan pada template ini";
 
   const penangananArray = mapHandlingToForm(penanganan)
-    .map((step) => ({
-      judulPenanganan: step.judulPenanganan || "",
-      instruksiInternal: normalizeInstructionPayload(step.instruksiInternal),
-      templateChat: step.templateChat || "",
-    }))
+    .map(buildHandlingStepPayload)
     .filter(
       (step) =>
         step.judulPenanganan ||
         step.instruksiInternal.length > 0 ||
-        step.templateChat,
+        step.templateChat ||
+        step.items.length > 0,
     );
 
   return {

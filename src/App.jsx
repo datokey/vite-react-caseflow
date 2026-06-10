@@ -15,6 +15,12 @@ import { useArticles } from "./hooks/useArticles";
 import { useToast } from "./hooks/useToast";
 import { ARTICLE_MESSAGES, ARTICLE_ROUTES } from "./lib/articleConstants";
 import { isPasswordChangeRequired } from "./lib/authUtils";
+import {
+  HANDLING_ITEM_TYPES,
+  getHandlingItems,
+  hasHandlingHtmlMarkup,
+  normalizeHandlingItemType,
+} from "./lib/handlingItems";
 import { escapeRegExp, hasHtmlMarkup, htmlToPlainText } from "./lib/htmlUtils";
 import { articleService } from "./services/articleService";
 import { authService } from "./services/authService";
@@ -308,11 +314,18 @@ const normalizeHandlingSteps = (article, options = {}) => {
       ? [
           {
             id: `${getSopId(article)}-step-1`,
-            title: "Tahap 1: Penanganan",
+            title: "Penanganan",
             instructions,
             instructionsHtml: "",
             instructionsText: instructions.join(" "),
             templateChat: "",
+            items: [
+              {
+                content: rawSteps,
+                id: `${getSopId(article)}-step-1-instruction`,
+                type: HANDLING_ITEM_TYPES.instruction,
+              },
+            ],
           },
         ]
       : [];
@@ -325,11 +338,18 @@ const normalizeHandlingSteps = (article, options = {}) => {
       if (typeof step === "string") {
         return {
           id: `${getSopId(article)}-step-${index + 1}`,
-          title: `Tahap ${index + 1}`,
+          title: `Penanganan ${index + 1}`,
           instructions: toTextList(step),
           instructionsHtml: "",
           instructionsText: toTextList(step).join(" "),
           templateChat: "",
+          items: [
+            {
+              content: step,
+              id: `${getSopId(article)}-step-${index + 1}-instruction`,
+              type: HANDLING_ITEM_TYPES.instruction,
+            },
+          ],
         };
       }
 
@@ -343,7 +363,7 @@ const normalizeHandlingSteps = (article, options = {}) => {
             "tahap",
             "stage",
           ]),
-        ) || `Tahap ${index + 1}`;
+        ) || `Penanganan ${index + 1}`;
       const instructionContent = getInstructionContent(
         getFirstValue(step, [
           "instruksiInternal",
@@ -364,6 +384,11 @@ const normalizeHandlingSteps = (article, options = {}) => {
           "messageTemplate",
         ]),
       );
+      const items = getHandlingItems(step).map((item, itemIndex) => ({
+        ...item,
+        id: toText(item?._id) || toText(item?.id) || `${getSopId(article)}-step-${index + 1}-item-${itemIndex + 1}`,
+        type: normalizeHandlingItemType(item.type),
+      }));
 
       return {
         id: toText(step?._id) || `${getSopId(article)}-step-${index + 1}`,
@@ -372,9 +397,10 @@ const normalizeHandlingSteps = (article, options = {}) => {
         instructionsHtml: instructionContent.instructionsHtml,
         instructionsText: instructionContent.instructionsText,
         templateChat,
+        items,
       };
     })
-    .filter((step) => step.title || step.instructions.length || step.instructionsHtml || step.templateChat);
+    .filter((step) => step.title || step.instructions.length || step.instructionsHtml || step.templateChat || step.items.length);
 };
 
 const getWarningContent = (article) => {
@@ -461,6 +487,9 @@ const getSearchableText = (article) =>
       ...step.instructions,
       step.instructionsText,
       hasHtmlMarkup(step.templateChat) ? htmlToSearchText(step.templateChat) : step.templateChat,
+      ...step.items.map((item) =>
+        hasHtmlMarkup(item.content) ? htmlToSearchText(item.content) : item.content,
+      ),
     ]),
   ]
     .filter(Boolean)
@@ -653,65 +682,166 @@ function TemplateChatBox({
   );
 }
 
-function TimelineStep({
+function InternalInstructionCard({ content, searchQuery }) {
+  if (!content) return null;
+
+  if (hasHandlingHtmlMarkup(content)) {
+    return (
+      <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+        <p className="mb-3 text-xs font-black uppercase text-emerald-700 dark:text-emerald-200">Internal Instruction</p>
+        <SanitizedHtmlRenderer
+          html={content}
+          highlightClassName={SEARCH_HIGHLIGHT_CLASS}
+          highlightQuery={searchQuery}
+          className="internal-instruction-content min-w-0 overflow-x-auto text-sm leading-6 break-words [overflow-wrap:anywhere] prose-a:break-all prose-code:break-words prose-pre:max-w-full prose-pre:overflow-x-auto [&_*]:max-w-full [&_li]:min-w-0 [&_li]:break-words [&_ol]:max-w-full [&_ul]:max-w-full"
+        />
+      </div>
+    );
+  }
+
+  const instructions = toTextList(content);
+
+  return (
+    <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+      <p className="mb-3 text-xs font-black uppercase text-emerald-700 dark:text-emerald-200">Internal Instruction</p>
+      <ul className="space-y-2">
+        {instructions.map((instruction, instructionIndex) => (
+          <li
+            key={`${instruction}-${instructionIndex}`}
+            className="flex gap-3 text-sm leading-6 text-slate-700 dark:text-slate-300"
+          >
+            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+            <span>
+              <HighlightedText text={instruction} query={searchQuery} />
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function HandlingNoteCard({ content, searchQuery }) {
+  if (!content) return null;
+
+  return (
+    <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
+      <p className="mb-3 text-xs font-black uppercase text-amber-700 dark:text-amber-200">Catatan</p>
+      {hasHandlingHtmlMarkup(content) ? (
+        <SanitizedHtmlRenderer
+          html={content}
+          highlightClassName={SEARCH_HIGHLIGHT_CLASS}
+          highlightQuery={searchQuery}
+          className="internal-instruction-content min-w-0 overflow-x-auto text-sm leading-6 break-words [overflow-wrap:anywhere] prose-a:break-all prose-code:break-words prose-pre:max-w-full prose-pre:overflow-x-auto [&_*]:max-w-full [&_li]:min-w-0 [&_li]:break-words [&_ol]:max-w-full [&_ul]:max-w-full"
+        />
+      ) : (
+        <p className="whitespace-pre-wrap text-sm leading-6">
+          <HighlightedText text={content} query={searchQuery} />
+        </p>
+      )}
+    </div>
+  );
+}
+
+function HandlingItemRenderer({
   copiedStepId,
   customerGreeting,
   customerName,
-  index,
+  item,
   onCopy,
   searchQuery,
   step,
 }) {
-  return (
-    <div className="relative pb-8 last:pb-0">
-      <div className="absolute -left-[2.15rem] top-0 flex h-7 w-7 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white ring-4 ring-slate-50">
-        {index + 1}
-      </div>
+  const itemType = normalizeHandlingItemType(item?.type);
+  const itemId = `${step.id}-${item?.id || itemType}`;
 
-      <div className="space-y-4">
-        <div>
-          <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Tahap {index + 1}</p>
-          <h3 className="mt-1 text-lg font-bold leading-tight text-slate-950 dark:text-white">
+  if (itemType === HANDLING_ITEM_TYPES.template) {
+    return (
+      <TemplateChatBox
+        template={item.content}
+        stepId={itemId}
+        copiedStepId={copiedStepId}
+        customerGreeting={customerGreeting}
+        customerName={customerName}
+        onCopy={onCopy}
+        searchQuery={searchQuery}
+      />
+    );
+  }
+
+  if (itemType === HANDLING_ITEM_TYPES.note) {
+    return <HandlingNoteCard content={item.content} searchQuery={searchQuery} />;
+  }
+
+  return <InternalInstructionCard content={item.content} searchQuery={searchQuery} />;
+}
+
+function HandlingSection({
+  copiedStepId,
+  customerGreeting,
+  customerName,
+  isExpanded,
+  onCopy,
+  onToggle,
+  searchQuery,
+  step,
+}) {
+  const items = step.items.length
+    ? step.items
+    : [
+        {
+          content: step.instructionsHtml || step.instructions.join("\n"),
+          id: `${step.id}-instruction`,
+          type: HANDLING_ITEM_TYPES.instruction,
+        },
+        ...(step.templateChat
+          ? [
+              {
+                content: step.templateChat,
+                id: `${step.id}-template`,
+                type: HANDLING_ITEM_TYPES.template,
+              },
+            ]
+          : []),
+      ];
+
+  return (
+    <section className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800"
+      >
+        <div className="min-w-0">
+          <h3 className="text-base font-black text-slate-950 dark:text-white">
             <HighlightedText text={step.title} query={searchQuery} />
           </h3>
+          <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+            {items.length} item penanganan
+          </p>
         </div>
+        <span className="shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs font-bold text-slate-600 dark:border-slate-700 dark:text-slate-300">
+          {isExpanded ? "Tutup" : "Buka"}
+        </span>
+      </button>
 
-        {step.instructionsHtml ? (
-          <SanitizedHtmlRenderer
-            html={step.instructionsHtml}
-            highlightClassName={SEARCH_HIGHLIGHT_CLASS}
-            highlightQuery={searchQuery}
-            className="internal-instruction-content min-w-0 overflow-x-auto text-sm leading-6 break-words [overflow-wrap:anywhere] prose-a:break-all prose-code:break-words prose-pre:max-w-full prose-pre:overflow-x-auto [&_*]:max-w-full [&_li]:min-w-0 [&_li]:break-words [&_ol]:max-w-full [&_ul]:max-w-full"
-          />
-        ) : step.instructions.length > 0 && (
-          <ul className="space-y-2">
-            {step.instructions.map((instruction, instructionIndex) => (
-              <li
-                key={`${step.id}-instruction-${instructionIndex}`}
-                className="flex gap-3 text-sm leading-6 text-slate-700 dark:text-slate-300"
-              >
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-                <span>
-                  <HighlightedText text={instruction} query={searchQuery} />
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {step.templateChat && (
-          <TemplateChatBox
-            template={step.templateChat}
-            stepId={step.id}
-            copiedStepId={copiedStepId}
-            customerGreeting={customerGreeting}
-            customerName={customerName}
-            onCopy={onCopy}
-            searchQuery={searchQuery}
-          />
-        )}
-      </div>
-    </div>
+      {isExpanded && (
+        <div className="space-y-4 border-t border-slate-200 p-4 dark:border-slate-800">
+          {items.map((item, index) => (
+            <HandlingItemRenderer
+              key={`${step.id}-${item.id || index}`}
+              copiedStepId={copiedStepId}
+              customerGreeting={customerGreeting}
+              customerName={customerName}
+              item={item}
+              onCopy={onCopy}
+              searchQuery={searchQuery}
+              step={step}
+            />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -825,6 +955,35 @@ function SopWorkspace({
   const keywordLabels = getKeywordLabels(article);
   const sopId = getSopId(article);
   const accentColor = getLogTypeAccentColor(article);
+  const [expandedHandlingState, setExpandedHandlingState] = useState(() => ({
+    ids: new Set(),
+    sopId: "",
+  }));
+  const expandedHandlingIds =
+    expandedHandlingState.sopId === sopId
+      ? expandedHandlingState.ids
+      : new Set(handlingSteps.map((step) => step.id));
+
+  const toggleHandling = (stepId) => {
+    setExpandedHandlingState((currentState) => {
+      const currentIds =
+        currentState.sopId === sopId
+          ? currentState.ids
+          : new Set(handlingSteps.map((step) => step.id));
+      const nextIds = new Set(currentIds);
+
+      if (nextIds.has(stepId)) {
+        nextIds.delete(stepId);
+      } else {
+        nextIds.add(stepId);
+      }
+
+      return {
+        ids: nextIds,
+        sopId,
+      };
+    });
+  };
 
   return (
     <article className="min-h-[calc(100vh-4rem)] bg-slate-50 dark:bg-slate-950">
@@ -930,19 +1089,20 @@ function SopWorkspace({
         </section>
 
         <section className="border-b border-slate-200 py-6 dark:border-slate-800">
-          <h2 className="mb-6 text-lg font-bold text-slate-950 dark:text-white">Alur Penanganan</h2>
+          <h2 className="mb-6 text-lg font-bold text-slate-950 dark:text-white">Penanganan</h2>
 
           {handlingSteps.length > 0 ? (
-            <div className="relative ml-4 border-l border-slate-300 pl-8 dark:border-slate-700">
-              {handlingSteps.map((step, index) => (
-                <TimelineStep
+            <div className="space-y-4">
+              {handlingSteps.map((step) => (
+                <HandlingSection
                   key={step.id}
                   step={step}
-                  index={index}
                   copiedStepId={copiedStepId}
                   customerGreeting={customerGreeting}
                   customerName={customerName}
+                  isExpanded={expandedHandlingIds.has(step.id)}
                   onCopy={(template, stepId) => onCopyTemplate(template, stepId, sopId)}
+                  onToggle={() => toggleHandling(step.id)}
                   searchQuery={searchQuery}
                 />
               ))}

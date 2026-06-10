@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import TextareaAutosize from "react-textarea-autosize";
 import GenerateRuleDraftButton from "../components/GenerateRuleDraftButton";
+import HandlingBuilder from "../components/HandlingBuilder";
 import InternalInstructionEditor from "../components/InternalInstructionEditor";
 import KeywordTagInput from "../components/KeywordTagInput";
-import TemplateChatEditor from "../components/TemplateChatEditor";
 import { useEditArticle } from "../hooks/useEditArticle";
 import { useToast } from "../hooks/useToast";
 import { ARTICLE_MESSAGES } from "../lib/articleConstants";
+import { createEmptyHandlingStep, hasHandlingItemContent } from "../lib/handlingItems";
 import { htmlToPlainText } from "../lib/htmlUtils";
 import { keywordService } from "../services/keywordService";
 import { sopRuleService } from "../services/sopRuleService";
@@ -22,15 +23,6 @@ const LOG_TYPES = [
   { value: "Inquiry", label: "Inquiry" },
   { value: "Other", label: "Lainnya" },
 ];
-
-const createEmptyStep = () => ({
-  id: `client-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-  judulPenanganan: "",
-  instruksiInternal: "",
-  templateChat: "",
-});
-
-const getStepKey = (step, index) => step?._id || step?.id || `step-${index}`;
 
 const getGeneratedRuleJson = (draftResult) => {
   const draft = draftResult?.draft || {};
@@ -68,7 +60,7 @@ export default function EditPage() {
   const [generatedRuleJson, setGeneratedRuleJson] = useState("[]");
   const [isLoadingRuleJson, setIsLoadingRuleJson] = useState(false);
   const [isSavingKeyword, setIsSavingKeyword] = useState(false);
-  const [fallbackStep] = useState(createEmptyStep);
+  const [fallbackStep] = useState(createEmptyHandlingStep);
 
   const penangananSteps =
     Array.isArray(formData.details?.Penanganan) && formData.details.Penanganan.length > 0
@@ -137,29 +129,8 @@ export default function EditPage() {
     }
   };
 
-  const handlePenangananChange = (index, field, value) => {
-    handleDetailsChange(
-      "Penanganan",
-      penangananSteps.map((step, stepIndex) =>
-        stepIndex === index ? { ...step, [field]: value } : step,
-      ),
-    );
-  };
-
-  const addPenangananStep = () => {
-    handleDetailsChange("Penanganan", [...penangananSteps, createEmptyStep()]);
-  };
-
-  const removePenangananStep = (indexToRemove) => {
-    if (penangananSteps.length === 1) {
-      showToast("Minimal harus ada satu tahap penanganan.", "error");
-      return;
-    }
-
-    handleDetailsChange(
-      "Penanganan",
-      penangananSteps.filter((_, index) => index !== indexToRemove),
-    );
+  const handlePenangananBuilderChange = (penanganan) => {
+    handleDetailsChange("Penanganan", penanganan);
   };
 
   const handleToggleVariableMenu = (textareaId) => {
@@ -203,12 +174,12 @@ export default function EditPage() {
     }
 
     if (penangananSteps.some((step) => !step.judulPenanganan?.trim())) {
-      showToast("Semua tahap penanganan harus memiliki judul.", "error");
+      showToast("Semua penanganan harus memiliki judul.", "error");
       return false;
     }
 
-    if (penangananSteps.some((step) => !htmlToPlainText(step.instruksiInternal).trim())) {
-      showToast("Semua tahap penanganan harus memiliki instruksi internal.", "error");
+    if (penangananSteps.some((step) => !(step.items || []).some(hasHandlingItemContent))) {
+      showToast("Semua penanganan harus memiliki minimal satu item yang terisi.", "error");
       return false;
     }
 
@@ -309,87 +280,14 @@ export default function EditPage() {
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Setiap baris akan menjadi satu kondisi</p>
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Tahap Penanganan</h2>
-                <button
-                  type="button"
-                  onClick={addPenangananStep}
-                  className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
-                >
-                  + Tambah Tahap
-                </button>
-              </div>
-
-              <div className="space-y-6">
-                {penangananSteps.map((step, index) => {
-                  const stepKey = getStepKey(step, index);
-                  const textareaId = `edit-${stepKey}-templateChat`;
-
-                  return (
-                    <div
-                      key={stepKey}
-                      className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950"
-                    >
-                      <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                          Tahap {index + 1}
-                        </h3>
-                        {penangananSteps.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removePenangananStep(index)}
-                            className="text-xs font-semibold text-rose-600 transition hover:text-rose-700"
-                          >
-                            Hapus
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="space-y-4">
-                        <div>
-                          <label className="mb-2 block text-sm font-semibold text-slate-900 dark:text-slate-100">
-                            Judul Penanganan
-                          </label>
-                          <input
-                            type="text"
-                            value={step.judulPenanganan || ""}
-                            onChange={(event) =>
-                              handlePenangananChange(index, "judulPenanganan", event.target.value)
-                            }
-                            placeholder="Contoh: Tahap 1: Dengarkan dan Pahami"
-                            className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
-                            required
-                          />
-                        </div>
-
-                        <InternalInstructionEditor
-                          id={`instruction-${stepKey}`}
-                          value={step.instruksiInternal || ""}
-                          onChange={(value) =>
-                            handlePenangananChange(index, "instruksiInternal", value)
-                          }
-                          placeholder="Contoh:&#10;Verifikasi Data Pelanggan&#10;  Cek nama pelanggan&#10;  Cek nomor telepon"
-                        />
-
-                        <TemplateChatEditor
-                          id={textareaId}
-                          value={step.templateChat || ""}
-                          onChange={(value) =>
-                            handlePenangananChange(index, "templateChat", value)
-                          }
-                          placeholder="Masukkan template chat. Gunakan toolbar untuk numbering/bullet dan {{variabel}} untuk placeholder."
-                          label="Template Chat"
-                          isVariableMenuOpen={Boolean(showVariableMenu[textareaId])}
-                          onToggleVariableMenu={handleToggleVariableMenu}
-                          onCloseVariableMenu={handleCloseVariableMenu}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <HandlingBuilder
+              onChange={handlePenangananBuilderChange}
+              onCloseVariableMenu={handleCloseVariableMenu}
+              onToggleVariableMenu={handleToggleVariableMenu}
+              showToast={showToast}
+              showVariableMenu={showVariableMenu}
+              steps={penangananSteps}
+            />
 
             <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Keyword</h2>

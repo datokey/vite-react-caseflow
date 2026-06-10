@@ -1,14 +1,15 @@
 import { useState } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import GenerateRuleDraftButton from "../components/GenerateRuleDraftButton";
+import HandlingBuilder from "../components/HandlingBuilder";
 import InternalInstructionEditor from "../components/InternalInstructionEditor";
 import KeywordTagInput from "../components/KeywordTagInput";
-import TemplateChatEditor from "../components/TemplateChatEditor";
 import { articleService } from "../services/articleService";
 import { keywordService } from "../services/keywordService";
 import { useToast } from "../hooks/useToast";
 import { ARTICLE_ROUTES } from "../lib/articleConstants";
 import { buildArticleSavePayload, getArticleId } from "../lib/articleUtils";
+import { createEmptyHandlingStep, hasHandlingItemContent } from "../lib/handlingItems";
 import { htmlToPlainText } from "../lib/htmlUtils";
 
 const DEFAULT_CATATAN = "Tidak ada catatan pada template ini";
@@ -53,14 +54,7 @@ const createEmptyFormData = () => ({
   kondisi: "",
   catatan: DEFAULT_CATATAN,
   keyword: [],
-  penanganan: [
-    {
-      id: 1,
-      judulPenanganan: "",
-      instruksiInternal: "",
-      templateChat: "",
-    },
-  ],
+  penanganan: [createEmptyHandlingStep()],
 });
 
 export default function AdminSOPPage() {
@@ -83,15 +77,6 @@ export default function AdminSOPPage() {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
-    }));
-  };
-
-  const handlePenangananChange = (id, field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      penanganan: prev.penanganan.map((step) =>
-        step.id === id ? { ...step, [field]: value } : step
-      ),
     }));
   };
 
@@ -132,30 +117,10 @@ export default function AdminSOPPage() {
     }
   };
 
-  const addPenangananStep = () => {
-    const newId = Math.max(...formData.penanganan.map((s) => s.id), 0) + 1;
+  const handlePenangananBuilderChange = (penanganan) => {
     setFormData((prev) => ({
       ...prev,
-      penanganan: [
-        ...prev.penanganan,
-        {
-          id: newId,
-          judulPenanganan: "",
-          instruksiInternal: "",
-          templateChat: "",
-        },
-      ],
-    }));
-  };
-
-  const removePenangananStep = (id) => {
-    if (formData.penanganan.length === 1) {
-      alert("Minimal harus ada satu tahap penanganan");
-      return;
-    }
-    setFormData((prev) => ({
-      ...prev,
-      penanganan: prev.penanganan.filter((step) => step.id !== id),
+      penanganan,
     }));
   };
 
@@ -194,12 +159,12 @@ export default function AdminSOPPage() {
       showToast("Tunggu sampai keyword baru selesai disimpan.", "error");
       return false;
     }
-    if (formData.penanganan.some((p) => !p.judulPenanganan.trim())) {
-      showToast("Semua tahap penanganan harus memiliki judul", "error");
+    if (formData.penanganan.some((p) => !p.judulPenanganan?.trim())) {
+      showToast("Semua penanganan harus memiliki judul", "error");
       return false;
     }
-    if (formData.penanganan.some((p) => !htmlToPlainText(p.instruksiInternal).trim())) {
-      showToast("Semua tahap penanganan harus memiliki instruksi internal", "error");
+    if (formData.penanganan.some((p) => !(p.items || []).some(hasHandlingItemContent))) {
+      showToast("Semua penanganan harus memiliki minimal satu item yang terisi", "error");
       return false;
     }
     return true;
@@ -214,11 +179,7 @@ export default function AdminSOPPage() {
         JenisLog: formData.jenisLog,
         Kondisi: formData.kondisi,
         Catatan: formData.catatan,
-        Penanganan: formData.penanganan.map((step) => ({
-          judulPenanganan: step.judulPenanganan,
-          instruksiInternal: step.instruksiInternal,
-          templateChat: step.templateChat,
-        })),
+        Penanganan: formData.penanganan,
       },
     });
 
@@ -367,97 +328,14 @@ export default function AdminSOPPage() {
             </div>
           </div>
 
-          {/* Penanganan Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                Tahap Penanganan
-              </h2>
-              <button
-                type="button"
-                onClick={addPenangananStep}
-                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition"
-              >
-                + Tambah Tahap
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              {formData.penanganan.map((step, index) => (
-                <div
-                  key={step.id}
-                  className="border border-slate-200 rounded-lg p-4 bg-slate-50 dark:border-slate-800 dark:bg-slate-950"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                      Tahap {index + 1}
-                    </h3>
-                    {formData.penanganan.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removePenangananStep(step.id)}
-                        className="text-xs font-semibold text-rose-600 hover:text-rose-700 transition"
-                      >
-                        Hapus
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-900 mb-2 dark:text-slate-100">
-                        Judul Penanganan
-                      </label>
-                      <input
-                        type="text"
-                        value={step.judulPenanganan}
-                        onChange={(e) =>
-                          handlePenangananChange(
-                            step.id,
-                            "judulPenanganan",
-                            e.target.value
-                          )
-                        }
-                        placeholder="Contoh: Tahap 1: Privy itu perusahaan apa?"
-                        className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
-                        required
-                      />
-                    </div>
-
-                    <InternalInstructionEditor
-                      id={`instruction-${step.id}`}
-                      value={step.instruksiInternal}
-                      onChange={(value) =>
-                        handlePenangananChange(
-                          step.id,
-                          "instruksiInternal",
-                          value
-                        )
-                      }
-                      placeholder="Contoh:&#10;Verifikasi Data Pelanggan&#10;  Cek nama pelanggan&#10;  Cek nomor telepon"
-                    />
-
-                    <TemplateChatEditor
-                      id={`textarea-${step.id}-templateChat`}
-                      value={step.templateChat}
-                      onChange={(value) =>
-                        handlePenangananChange(
-                          step.id,
-                          "templateChat",
-                          value
-                        )
-                      }
-                      placeholder="Masukkan template chat. Gunakan toolbar untuk numbering/bullet dan {{variabel}} untuk placeholder."
-                      label="Template Chat"
-                      isVariableMenuOpen={Boolean(showVariableMenu[`textarea-${step.id}-templateChat`])}
-                      onToggleVariableMenu={handleToggleVariableMenu}
-                      onCloseVariableMenu={handleCloseVariableMenu}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <HandlingBuilder
+            onChange={handlePenangananBuilderChange}
+            onCloseVariableMenu={handleCloseVariableMenu}
+            onToggleVariableMenu={handleToggleVariableMenu}
+            showToast={showToast}
+            showVariableMenu={showVariableMenu}
+            steps={formData.penanganan}
+          />
 
           {/* Keyword Section */}
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 dark:border-slate-800 dark:bg-slate-900">
