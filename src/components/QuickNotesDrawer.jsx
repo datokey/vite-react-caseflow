@@ -214,20 +214,7 @@ export default function QuickNotesDrawer() {
             >
               <CloseIcon />
             </button>
-          </div>
-
-          <div className="flex gap-2 border-b border-slate-200 px-5 py-3 dark:border-slate-800">
-            <button
-              type="button"
-              className="relative inline-flex h-9 flex-1 items-center justify-center rounded-lg bg-amber-100 px-3 text-sm font-bold text-amber-800 transition dark:bg-amber-500/20 dark:text-amber-100"
-            >
-              Quick notes
-              {hasAnyNote && (
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-emerald-500" />
-              )}
-            </button>
-          </div>
-
+          </div> 
           <div className="flex min-h-0 flex-1 flex-col gap-4 p-5">
             <textarea
               ref={textareaRef}
