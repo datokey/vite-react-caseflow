@@ -323,6 +323,7 @@ const normalizeHandlingSteps = (article, options = {}) => {
               {
                 content: rawSteps,
                 id: `${getSopId(article)}-step-1-instruction`,
+                title: "",
                 type: HANDLING_ITEM_TYPES.instruction,
               },
             ],
@@ -347,6 +348,7 @@ const normalizeHandlingSteps = (article, options = {}) => {
             {
               content: step,
               id: `${getSopId(article)}-step-${index + 1}-instruction`,
+              title: "",
               type: HANDLING_ITEM_TYPES.instruction,
             },
           ],
@@ -387,6 +389,7 @@ const normalizeHandlingSteps = (article, options = {}) => {
       const items = getHandlingItems(step).map((item, itemIndex) => ({
         ...item,
         id: toText(item?._id) || toText(item?.id) || `${getSopId(article)}-step-${index + 1}-item-${itemIndex + 1}`,
+        title: toText(item.title),
         type: normalizeHandlingItemType(item.type),
       }));
 
@@ -488,7 +491,10 @@ const getSearchableText = (article) =>
       step.instructionsText,
       hasHtmlMarkup(step.templateChat) ? htmlToSearchText(step.templateChat) : step.templateChat,
       ...step.items.map((item) =>
-        hasHtmlMarkup(item.content) ? htmlToSearchText(item.content) : item.content,
+        [
+          item.title,
+          hasHtmlMarkup(item.content) ? htmlToSearchText(item.content) : item.content,
+        ].filter(Boolean).join(" "),
       ),
     ]),
   ]
@@ -648,6 +654,7 @@ function TemplateChatBox({
   searchQuery,
   stepId,
   template,
+  title,
 }) {
   const filledTemplate = fillTemplate(template, customerName, customerGreeting);
   const copyText = htmlToPlainText(filledTemplate);
@@ -657,7 +664,12 @@ function TemplateChatBox({
   return (
     <div className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
       <div className="flex min-w-0 flex-col gap-3 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
-        <p className="min-w-0 text-sm font-semibold text-slate-700 dark:text-slate-200">Template chat</p>
+        <div className="min-w-0">
+          <p className="text-xs font-black uppercase text-indigo-600 dark:text-indigo-300">Template chat</p>
+          <p className="mt-1 min-w-0 break-words text-sm font-semibold text-slate-700 dark:text-slate-200">
+            <HighlightedText text={title || "Template chat"} query={searchQuery} />
+          </p>
+        </div>
         <button
           type="button"
           onClick={() => onCopy(copyText, stepId)}
@@ -682,18 +694,23 @@ function TemplateChatBox({
   );
 }
 
-function InternalInstructionCard({ content, searchQuery }) {
+function InternalInstructionCard({ content, searchQuery, title }) {
   if (!content) return null;
 
   if (hasHandlingHtmlMarkup(content)) {
     return (
       <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10">
-        <p className="mb-3 text-xs font-black uppercase text-emerald-700 dark:text-emerald-200">Internal Instruction</p>
+        <p className="text-xs font-black uppercase text-emerald-700 dark:text-emerald-200">Internal Instruction</p>
+        {title && (
+          <p className="mt-1 break-words text-sm font-bold text-slate-900 dark:text-white">
+            <HighlightedText text={title} query={searchQuery} />
+          </p>
+        )}
         <SanitizedHtmlRenderer
           html={content}
           highlightClassName={SEARCH_HIGHLIGHT_CLASS}
           highlightQuery={searchQuery}
-          className="internal-instruction-content min-w-0 overflow-x-auto text-sm leading-6 break-words [overflow-wrap:anywhere] prose-a:break-all prose-code:break-words prose-pre:max-w-full prose-pre:overflow-x-auto [&_*]:max-w-full [&_li]:min-w-0 [&_li]:break-words [&_ol]:max-w-full [&_ul]:max-w-full"
+          className="internal-instruction-content mt-3 min-w-0 overflow-x-auto text-sm leading-6 break-words [overflow-wrap:anywhere] prose-a:break-all prose-code:break-words prose-pre:max-w-full prose-pre:overflow-x-auto [&_*]:max-w-full [&_li]:min-w-0 [&_li]:break-words [&_ol]:max-w-full [&_ul]:max-w-full"
         />
       </div>
     );
@@ -703,8 +720,13 @@ function InternalInstructionCard({ content, searchQuery }) {
 
   return (
     <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10">
-      <p className="mb-3 text-xs font-black uppercase text-emerald-700 dark:text-emerald-200">Internal Instruction</p>
-      <ul className="space-y-2">
+      <p className="text-xs font-black uppercase text-emerald-700 dark:text-emerald-200">Internal Instruction</p>
+      {title && (
+        <p className="mt-1 break-words text-sm font-bold text-slate-900 dark:text-white">
+          <HighlightedText text={title} query={searchQuery} />
+        </p>
+      )}
+      <ul className="mt-3 space-y-2">
         {instructions.map((instruction, instructionIndex) => (
           <li
             key={`${instruction}-${instructionIndex}`}
@@ -721,21 +743,26 @@ function InternalInstructionCard({ content, searchQuery }) {
   );
 }
 
-function HandlingNoteCard({ content, searchQuery }) {
+function HandlingNoteCard({ content, searchQuery, title }) {
   if (!content) return null;
 
   return (
     <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
-      <p className="mb-3 text-xs font-black uppercase text-amber-700 dark:text-amber-200">Catatan</p>
+      <p className="text-xs font-black uppercase text-amber-700 dark:text-amber-200">Catatan</p>
+      {title && (
+        <p className="mt-1 break-words text-sm font-bold text-amber-950 dark:text-amber-50">
+          <HighlightedText text={title} query={searchQuery} />
+        </p>
+      )}
       {hasHandlingHtmlMarkup(content) ? (
         <SanitizedHtmlRenderer
           html={content}
           highlightClassName={SEARCH_HIGHLIGHT_CLASS}
           highlightQuery={searchQuery}
-          className="internal-instruction-content min-w-0 overflow-x-auto text-sm leading-6 break-words [overflow-wrap:anywhere] prose-a:break-all prose-code:break-words prose-pre:max-w-full prose-pre:overflow-x-auto [&_*]:max-w-full [&_li]:min-w-0 [&_li]:break-words [&_ol]:max-w-full [&_ul]:max-w-full"
+          className="internal-instruction-content mt-3 min-w-0 overflow-x-auto text-sm leading-6 break-words [overflow-wrap:anywhere] prose-a:break-all prose-code:break-words prose-pre:max-w-full prose-pre:overflow-x-auto [&_*]:max-w-full [&_li]:min-w-0 [&_li]:break-words [&_ol]:max-w-full [&_ul]:max-w-full"
         />
       ) : (
-        <p className="whitespace-pre-wrap text-sm leading-6">
+        <p className="mt-3 whitespace-pre-wrap text-sm leading-6">
           <HighlightedText text={content} query={searchQuery} />
         </p>
       )}
@@ -754,11 +781,13 @@ function HandlingItemRenderer({
 }) {
   const itemType = normalizeHandlingItemType(item?.type);
   const itemId = `${step.id}-${item?.id || itemType}`;
+  const itemTitle = toText(item?.title);
 
   if (itemType === HANDLING_ITEM_TYPES.template) {
     return (
       <TemplateChatBox
         template={item.content}
+        title={itemTitle}
         stepId={itemId}
         copiedStepId={copiedStepId}
         customerGreeting={customerGreeting}
@@ -770,10 +799,10 @@ function HandlingItemRenderer({
   }
 
   if (itemType === HANDLING_ITEM_TYPES.note) {
-    return <HandlingNoteCard content={item.content} searchQuery={searchQuery} />;
+    return <HandlingNoteCard content={item.content} searchQuery={searchQuery} title={itemTitle} />;
   }
 
-  return <InternalInstructionCard content={item.content} searchQuery={searchQuery} />;
+  return <InternalInstructionCard content={item.content} searchQuery={searchQuery} title={itemTitle} />;
 }
 
 function HandlingSection({
@@ -792,6 +821,7 @@ function HandlingSection({
         {
           content: step.instructionsHtml || step.instructions.join("\n"),
           id: `${step.id}-instruction`,
+          title: "",
           type: HANDLING_ITEM_TYPES.instruction,
         },
         ...(step.templateChat
@@ -799,6 +829,7 @@ function HandlingSection({
               {
                 content: step.templateChat,
                 id: `${step.id}-template`,
+                title: "",
                 type: HANDLING_ITEM_TYPES.template,
               },
             ]

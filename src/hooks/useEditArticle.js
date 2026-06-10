@@ -9,6 +9,27 @@ import {
 import { articleService } from "../services/articleService";
 import { keywordService } from "../services/keywordService";
 
+const EDIT_ARTICLE_DRAFT_PREFIX = "admin-sop-edit-draft";
+const AUTOSAVE_DELAY_MS = 700;
+
+const getEditDraftKey = (id) => `${EDIT_ARTICLE_DRAFT_PREFIX}:${id}`;
+
+const getStoredEditDraft = (id) => {
+  if (typeof window === "undefined" || !id) return null;
+
+  try {
+    const draft = window.localStorage.getItem(getEditDraftKey(id));
+    return draft ? JSON.parse(draft) : null;
+  } catch {
+    return null;
+  }
+};
+
+const removeStoredEditDraft = (id) => {
+  if (typeof window === "undefined" || !id) return;
+  window.localStorage.removeItem(getEditDraftKey(id));
+};
+
 export const useEditArticle = (id) => {
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -16,6 +37,7 @@ export const useEditArticle = (id) => {
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState(() => mapArticleToForm(null));
   const [isSaving, setIsSaving] = useState(false);
+  const [hasLoadedArticle, setHasLoadedArticle] = useState(false);
 
   const goToHome = useCallback(() => {
     navigate(ARTICLE_ROUTES.home);
@@ -35,6 +57,7 @@ export const useEditArticle = (id) => {
       try {
         setLoading(true);
         setError(null);
+        setHasLoadedArticle(false);
 
         // Detail artikel dinormalisasi di helper agar struktur response backend tidak bocor ke UI.
         const article = await articleService.getArticleById(id);
@@ -47,7 +70,23 @@ export const useEditArticle = (id) => {
           return;
         }
 
-        setFormData(mapArticleToForm(article));
+        const articleForm = mapArticleToForm(article);
+        const editDraft = getStoredEditDraft(id);
+
+        setFormData(
+          editDraft && typeof editDraft === "object"
+            ? {
+                ...articleForm,
+                ...editDraft,
+                keywords: Array.isArray(editDraft.keywords) ? editDraft.keywords : articleForm.keywords,
+                details: {
+                  ...articleForm.details,
+                  ...(editDraft.details || {}),
+                },
+              }
+            : articleForm,
+        );
+        setHasLoadedArticle(true);
       } catch (err) {
         if (!isActive) return;
 
@@ -67,6 +106,16 @@ export const useEditArticle = (id) => {
       isActive = false;
     };
   }, [id, showToast]);
+
+  useEffect(() => {
+    if (!hasLoadedArticle || !id || loading || error) return undefined;
+
+    const timerId = window.setTimeout(() => {
+      window.localStorage.setItem(getEditDraftKey(id), JSON.stringify(formData));
+    }, AUTOSAVE_DELAY_MS);
+
+    return () => window.clearTimeout(timerId);
+  }, [error, formData, hasLoadedArticle, id, loading]);
 
   const handleInputChange = useCallback((event) => {
     const { name, value } = event.target;
@@ -166,6 +215,7 @@ export const useEditArticle = (id) => {
 
         // Payload artikel disiapkan setelah keyword baru dipastikan tersimpan di database.
         await articleService.saveArticleChanges(id, articlePayload);
+        removeStoredEditDraft(id);
         showToast(ARTICLE_MESSAGES.saveSuccess, "success");
         goToHome();
       } catch (err) {

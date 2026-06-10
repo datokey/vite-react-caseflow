@@ -67,11 +67,11 @@ export default function HandlingBuilder({
     }));
   };
 
-  const updateItem = (stepIndex, itemIndex, value) => {
+  const updateItemField = (stepIndex, itemIndex, field, value) => {
     updateStep(stepIndex, (step) => ({
       ...step,
       items: (Array.isArray(step.items) ? step.items : []).map((item, index) =>
-        index === itemIndex ? { ...item, content: value } : item,
+        index === itemIndex ? { ...item, [field]: value } : item,
       ),
     }));
   };
@@ -227,11 +227,26 @@ export default function HandlingBuilder({
                         </div>
                       </div>
 
+                      <label className="mb-4 block">
+                        <span className="mb-2 block text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          Judul Item <span className="font-normal text-slate-400">(opsional)</span>
+                        </span>
+                        <input
+                          type="text"
+                          value={item.title || ""}
+                          onChange={(event) =>
+                            updateItemField(stepIndex, itemIndex, "title", event.target.value)
+                          }
+                          placeholder={`Contoh: ${HANDLING_ITEM_LABELS[type]} utama`}
+                          className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500"
+                        />
+                      </label>
+
                       {type === HANDLING_ITEM_TYPES.template ? (
                         <TemplateChatEditor
                           id={editorId}
                           value={item.content || ""}
-                          onChange={(value) => updateItem(stepIndex, itemIndex, value)}
+                          onChange={(value) => updateItemField(stepIndex, itemIndex, "content", value)}
                           placeholder="Masukkan template chat. Gunakan toolbar untuk numbering/bullet dan {{variabel}} untuk placeholder."
                           label="Template Chat"
                           isVariableMenuOpen={Boolean(showVariableMenu[editorId])}
@@ -242,7 +257,7 @@ export default function HandlingBuilder({
                         <InternalInstructionEditor
                           id={editorId}
                           value={item.content || ""}
-                          onChange={(value) => updateItem(stepIndex, itemIndex, value)}
+                          onChange={(value) => updateItemField(stepIndex, itemIndex, "content", value)}
                           placeholder={
                             type === HANDLING_ITEM_TYPES.note
                               ? "Tulis catatan khusus untuk penanganan ini."

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import GenerateRuleDraftButton from "../components/GenerateRuleDraftButton";
 import HandlingBuilder from "../components/HandlingBuilder";
 import InternalInstructionEditor from "../components/InternalInstructionEditor";
 import KeywordTagInput from "../components/KeywordTagInput";
+import { useDebounce } from "../hooks/useDebounce";
 import { articleService } from "../services/articleService";
 import { keywordService } from "../services/keywordService";
 import { useToast } from "../hooks/useToast";
@@ -13,6 +14,8 @@ import { createEmptyHandlingStep, hasHandlingItemContent } from "../lib/handling
 import { htmlToPlainText } from "../lib/htmlUtils";
 
 const DEFAULT_CATATAN = "Tidak ada catatan pada template ini";
+const CREATE_SOP_DRAFT_KEY = "admin-sop-create-draft";
+const AUTOSAVE_DELAY_MS = 700;
 const NAVIGATION_PREFERENCE_KEY = "adminSopNavigationPreference";
 const NAVIGATION_PREFERENCES = {
   stay: "stay-admin",
@@ -57,9 +60,45 @@ const createEmptyFormData = () => ({
   penanganan: [createEmptyHandlingStep()],
 });
 
+const getInitialFormData = () => {
+  if (typeof window === "undefined") return createEmptyFormData();
+
+  try {
+    const draft = window.localStorage.getItem(CREATE_SOP_DRAFT_KEY);
+    const parsedDraft = draft ? JSON.parse(draft) : null;
+
+    if (!parsedDraft || typeof parsedDraft !== "object") return createEmptyFormData();
+
+    return {
+      ...createEmptyFormData(),
+      ...parsedDraft,
+      keyword: Array.isArray(parsedDraft.keyword) ? parsedDraft.keyword : [],
+      penanganan: Array.isArray(parsedDraft.penanganan) && parsedDraft.penanganan.length
+        ? parsedDraft.penanganan
+        : [createEmptyHandlingStep()],
+    };
+  } catch {
+    return createEmptyFormData();
+  }
+};
+
+const hasMeaningfulDraftContent = (formData) =>
+  Boolean(
+    formData.title?.trim() ||
+      formData.jenisLog?.trim() ||
+      formData.kondisi?.trim() ||
+      formData.keyword?.length ||
+      (formData.catatan && htmlToPlainText(formData.catatan).trim() !== DEFAULT_CATATAN) ||
+      formData.penanganan?.some(
+        (step) =>
+          step?.judulPenanganan?.trim() ||
+          (step?.items || []).some((item) => item?.title?.trim() || hasHandlingItemContent(item)),
+      ),
+  );
+
 export default function AdminSOPPage() {
   const { showToast } = useToast();
-  const [formData, setFormData] = useState(createEmptyFormData);
+  const [formData, setFormData] = useState(getInitialFormData);
   const [navigationPreference, setNavigationPreference] = useState(getStoredNavigationPreference);
 
   const [createdSopData, setCreatedSopData] = useState(null);
@@ -67,6 +106,28 @@ export default function AdminSOPPage() {
   const [showVariableMenu, setShowVariableMenu] = useState({});
   const [isSavingKeyword, setIsSavingKeyword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [lastSavedDraftSignature, setLastSavedDraftSignature] = useState("");
+  const debouncedFormData = useDebounce(formData, AUTOSAVE_DELAY_MS);
+  const hasDraftContent = useMemo(() => hasMeaningfulDraftContent(formData), [formData]);
+  const currentDraftSignature = useMemo(() => JSON.stringify(formData), [formData]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (!hasDraftContent) {
+      window.localStorage.removeItem(CREATE_SOP_DRAFT_KEY);
+      return;
+    }
+
+    const serializedDraft = JSON.stringify(debouncedFormData);
+
+    if (currentDraftSignature === lastSavedDraftSignature) {
+      window.localStorage.removeItem(CREATE_SOP_DRAFT_KEY);
+      return;
+    }
+
+    window.localStorage.setItem(CREATE_SOP_DRAFT_KEY, serializedDraft);
+  }, [currentDraftSignature, debouncedFormData, hasDraftContent, lastSavedDraftSignature]);
 
   const handleNavigationPreferenceChange = (preference) => {
     setNavigationPreference(preference);
@@ -195,10 +256,14 @@ export default function AdminSOPPage() {
       setCreatedSopId(savedSopId);
     }
 
+    setLastSavedDraftSignature(currentDraftSignature);
+    window.localStorage.removeItem(CREATE_SOP_DRAFT_KEY);
+
     if (resetAfterSave) {
       setFormData(createEmptyFormData());
       setCreatedSopData(null);
       setCreatedSopId("");
+      setLastSavedDraftSignature("");
     }
 
     return {
@@ -451,6 +516,8 @@ export default function AdminSOPPage() {
                 setFormData(createEmptyFormData());
                 setCreatedSopData(null);
                 setCreatedSopId("");
+                setLastSavedDraftSignature("");
+                window.localStorage.removeItem(CREATE_SOP_DRAFT_KEY);
               }}
               className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
             >

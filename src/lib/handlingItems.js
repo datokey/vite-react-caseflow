@@ -1,9 +1,9 @@
 import { htmlToPlainText } from "./htmlUtils";
 
 export const HANDLING_ITEM_TYPES = {
-  instruction: "instruction",
+  instruction: "internal_instruction",
   note: "note",
-  template: "template",
+  template: "template_chat",
 };
 
 export const HANDLING_ITEM_LABELS = {
@@ -25,6 +25,17 @@ export const normalizeHandlingItemType = (type) => {
     return HANDLING_ITEM_TYPES.template;
   }
 
+  if ([
+    "instruction",
+    "instructions",
+    "internalinstruction",
+    "internal_instruction",
+    "instruksi",
+    "instruksi_internal",
+  ].includes(value)) {
+    return HANDLING_ITEM_TYPES.instruction;
+  }
+
   if (["catatan", "note", "notes", "warning", "warnings"].includes(value)) {
     return HANDLING_ITEM_TYPES.note;
   }
@@ -34,6 +45,7 @@ export const normalizeHandlingItemType = (type) => {
 
 export const createHandlingItem = (type = HANDLING_ITEM_TYPES.instruction) => ({
   id: createClientId("item"),
+  title: "",
   type: normalizeHandlingItemType(type),
   content: "",
 });
@@ -103,6 +115,7 @@ const getFirstValue = (source, keys) => {
 
 const normalizeItemObject = (item = {}, index = 0) => ({
   id: item?._id || item?.id || createClientId(`item-${index}`),
+  title: item?.title || item?.judul || item?.label || item?.name || "",
   type: normalizeHandlingItemType(item?.type || item?.kind || item?.componentType || item?.itemType),
   content:
     item?.content ??
@@ -150,6 +163,7 @@ export const getHandlingItems = (step = {}) => {
   if (instruction !== undefined && instruction !== null) {
     items.push({
       id: createClientId("instruction"),
+      title: "",
       type: HANDLING_ITEM_TYPES.instruction,
       content: instructionValueToForm(instruction),
     });
@@ -158,6 +172,7 @@ export const getHandlingItems = (step = {}) => {
   if (template !== undefined && template !== null) {
     items.push({
       id: createClientId("template"),
+      title: "",
       type: HANDLING_ITEM_TYPES.template,
       content: template || "",
     });
@@ -168,6 +183,7 @@ export const getHandlingItems = (step = {}) => {
     notes.forEach((item) => {
       items.push({
         id: createClientId("note"),
+        title: "",
         type: HANDLING_ITEM_TYPES.note,
         content: instructionValueToForm(item),
       });
@@ -193,6 +209,7 @@ export const normalizeHandlingStepForForm = (step = {}) => {
 export const buildHandlingStepPayload = (step = {}) => {
   const items = (Array.isArray(step.items) ? step.items : getHandlingItems(step))
     .map((item) => ({
+      title: String(item.title || "").trim(),
       type: normalizeHandlingItemType(item.type),
       content: item.content || "",
     }))

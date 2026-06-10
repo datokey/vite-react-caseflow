@@ -3,8 +3,10 @@ import {
   EMPTY_ARTICLE_FORM,
 } from "./articleConstants";
 import {
+  HANDLING_ITEM_TYPES,
   buildHandlingStepPayload,
   createEmptyHandlingStep,
+  createHandlingItem,
   normalizeHandlingStepForForm,
 } from "./handlingItems";
 import { normalizeKeyword, toKeywordPayload } from "./keywordUtils";
@@ -70,7 +72,18 @@ const mapHandlingToForm = (penanganan) => {
   }
 
   if (typeof penanganan === "string" && penanganan.trim()) {
-    return [{ ...createEmptyHandlingStep(), judulPenanganan: penanganan.trim() }];
+    return [
+      {
+        ...createEmptyHandlingStep(),
+        judulPenanganan: "Penanganan",
+        items: [
+          {
+            ...createHandlingItem(HANDLING_ITEM_TYPES.instruction),
+            content: penanganan.trim(),
+          },
+        ],
+      },
+    ];
   }
 
   return [createEmptyHandlingStep()];
