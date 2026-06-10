@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import SanitizedHtmlRenderer from "./SanitizedHtmlRenderer";
 import { useToast } from "../hooks/useToast";
+import {
+  HANDLING_ITEM_TYPES,
+  getHandlingItems,
+  normalizeHandlingItemType,
+} from "../lib/handlingItems";
 import { hasHtmlMarkup, htmlToPlainText } from "../lib/htmlUtils";
 import { decisionService } from "../services/decisionService";
 
@@ -104,6 +109,8 @@ const getDecisionHandlingId = (decision) =>
 
 const getArticleHandlingItems = (article) => {
   const handlingItems =
+    article?.contentBlocks ||
+    article?.content_blocks ||
     article?.details?.Penanganan ||
     article?.details?.penanganan ||
     article?.details?.handling ||
@@ -115,22 +122,40 @@ const getArticleHandlingItems = (article) => {
   return Array.isArray(handlingItems) ? handlingItems : [];
 };
 
-const normalizeHandling = (handling = {}) => ({
-  id: getHandlingId(handling),
-  instructions:
-    handling?.instruksiInternal ??
-    handling?.instructions ??
-    handling?.instruction ??
-    handling?.internalInstruction ??
-    handling?.instruksi ??
-    "",
-  templateChat: toText(handling?.templateChat) || toText(handling?.template) || toText(handling?.chatTemplate),
-  title:
-    toText(handling?.judulPenanganan) ||
-    toText(handling?.title) ||
-    toText(handling?.name) ||
-    "Penanganan spesifik",
-});
+const normalizeHandling = (handling = {}) => {
+  const handlingItems = getHandlingItems(handling);
+  const instructionItems = handlingItems
+    .filter((item) => normalizeHandlingItemType(item.type) === HANDLING_ITEM_TYPES.instruction)
+    .map((item) => item.content)
+    .filter(Boolean);
+  const templateItems = handlingItems
+    .filter((item) => normalizeHandlingItemType(item.type) === HANDLING_ITEM_TYPES.template)
+    .map((item) => item.content)
+    .filter(Boolean);
+
+  return {
+    id: getHandlingId(handling),
+    instructions:
+      instructionItems.length > 0
+        ? instructionItems
+        : handling?.instruksiInternal ??
+          handling?.instructions ??
+          handling?.instruction ??
+          handling?.internalInstruction ??
+          handling?.instruksi ??
+          "",
+    templateChat:
+      templateItems[0] ||
+      toText(handling?.templateChat) ||
+      toText(handling?.template) ||
+      toText(handling?.chatTemplate),
+    title:
+      toText(handling?.judulPenanganan) ||
+      toText(handling?.title) ||
+      toText(handling?.name) ||
+      "Penanganan spesifik",
+  };
+};
 
 const resolveDecisionData = (decision, articles) => {
   const sopId = getDecisionSopId(decision);

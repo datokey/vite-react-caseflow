@@ -18,6 +18,19 @@ export const hasHandlingHtmlMarkup = (value = "") => HTML_TAG_PATTERN.test(Strin
 
 const createClientId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
+const sortByOrder = (items = []) =>
+  [...items].sort((firstItem, secondItem) => {
+    const firstOrder = Number(firstItem?.order);
+    const secondOrder = Number(secondItem?.order);
+    const firstHasOrder = Number.isFinite(firstOrder);
+    const secondHasOrder = Number.isFinite(secondOrder);
+
+    if (firstHasOrder && secondHasOrder) return firstOrder - secondOrder;
+    if (firstHasOrder) return -1;
+    if (secondHasOrder) return 1;
+    return 0;
+  });
+
 export const normalizeHandlingItemType = (type) => {
   const value = String(type || "").trim().toLowerCase();
 
@@ -132,7 +145,7 @@ export const getHandlingItems = (step = {}) => {
   const explicitItems = getFirstValue(step, ["items", "item", "sections", "components", "contents"]);
 
   if (Array.isArray(explicitItems) && explicitItems.length > 0) {
-    return explicitItems.map(normalizeItemObject).filter(hasHandlingItemContent);
+    return sortByOrder(explicitItems).map(normalizeItemObject).filter(hasHandlingItemContent);
   }
 
   const items = [];

@@ -62,9 +62,31 @@ const normalizeTextLines = (value) => {
   return [];
 };
 
+const getJenisLogValue = (article = {}) =>
+  article.jenisLog ?? article.details?.JenisLog ?? article.details?.jenisLog ?? "";
+
+const getConditionsValue = (article = {}) =>
+  article.conditions ?? article.details?.Kondisi ?? article.details?.conditions ?? "";
+
+const getHandlingValue = (article = {}) =>
+  article.contentBlocks ?? article.details?.Penanganan ?? article.details?.penanganan;
+
+const sortByOrder = (items = []) =>
+  [...items].sort((firstItem, secondItem) => {
+    const firstOrder = Number(firstItem?.order);
+    const secondOrder = Number(secondItem?.order);
+    const firstHasOrder = Number.isFinite(firstOrder);
+    const secondHasOrder = Number.isFinite(secondOrder);
+
+    if (firstHasOrder && secondHasOrder) return firstOrder - secondOrder;
+    if (firstHasOrder) return -1;
+    if (secondHasOrder) return 1;
+    return 0;
+  });
+
 const mapHandlingToForm = (penanganan) => {
   if (Array.isArray(penanganan) && penanganan.length > 0) {
-    return penanganan.map(normalizeHandlingStepForForm);
+    return sortByOrder(penanganan).map(normalizeHandlingStepForForm);
   }
 
   if (penanganan && typeof penanganan === "object") {
@@ -129,18 +151,20 @@ export const mapArticleToForm = (article) => ({
   content: article?.content || "",
   keywords: mapArticleKeywords(article),
   details: {
-    JenisLog: article?.details?.JenisLog || "",
-    Kondisi: Array.isArray(article?.details?.Kondisi)
-      ? article.details.Kondisi.join("\n")
-      : article?.details?.Kondisi || "",
+    JenisLog: getJenisLogValue(article),
+    Kondisi: Array.isArray(getConditionsValue(article))
+      ? getConditionsValue(article).join("\n")
+      : getConditionsValue(article),
     Catatan: getArticleCatatanValue(article) || "Tidak ada catatan pada template ini",
-    Penanganan: mapHandlingToForm(article?.details?.Penanganan),
+    Penanganan: mapHandlingToForm(getHandlingValue(article)),
   },
 });
 
 export const buildArticleSavePayload = (formData) => {
   const penanganan = formData.details?.Penanganan;
   const catatan = getCatatanValue(formData.details) || "Tidak ada catatan pada template ini";
+  const jenisLog = formData.details?.JenisLog || "";
+  const conditions = normalizeTextLines(formData.details?.Kondisi);
 
   const penangananArray = mapHandlingToForm(penanganan)
     .map(buildHandlingStepPayload)
@@ -151,18 +175,34 @@ export const buildArticleSavePayload = (formData) => {
         step.templateChat ||
         step.items.length > 0,
     );
+  const contentBlocks = penangananArray.map((step, blockIndex) => ({
+    type: "handling",
+    title: step.judulPenanganan,
+    order: blockIndex,
+    items: step.items.map((item, itemIndex) => ({
+      type: item.type,
+      title: item.title || "",
+      content: item.content,
+      order: itemIndex,
+    })),
+  }));
 
   return {
     title: formData.title,
+    jenisLog,
+    conditions,
+    contentBlocks,
+    keyword: formData.keywords.map(toKeywordPayload),
+
+    // Field lama tetap dikirim untuk kompatibilitas controller/response lama.
     content: formData.content?.trim() || formData.title?.trim() || "",
     catatan,
     details: {
-      JenisLog: formData.details?.JenisLog || "",
-      Kondisi: normalizeTextLines(formData.details?.Kondisi),
+      JenisLog: jenisLog,
+      Kondisi: conditions,
       catatan,
       Catatan: catatan,
       Penanganan: penangananArray,
     },
-    keyword: formData.keywords.map(toKeywordPayload),
   };
 };

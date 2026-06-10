@@ -176,6 +176,19 @@ const getFirstValue = (source, keys) => {
     });
 };
 
+const sortByOrder = (items = []) =>
+  [...items].sort((firstItem, secondItem) => {
+    const firstOrder = Number(firstItem?.order);
+    const secondOrder = Number(secondItem?.order);
+    const firstHasOrder = Number.isFinite(firstOrder);
+    const secondHasOrder = Number.isFinite(secondOrder);
+
+    if (firstHasOrder && secondHasOrder) return firstOrder - secondOrder;
+    if (firstHasOrder) return -1;
+    if (secondHasOrder) return 1;
+    return 0;
+  });
+
 const getSopId = (article) => {
   const id = toText(article?._id) || toText(article?.id);
   return id || article?.title || "";
@@ -244,7 +257,10 @@ const getCategory = (article) =>
   ) || "SOP Operasional";
 
 const getConditions = (article) =>
-  toTextList(getFirstValue(article?.details, ["Kondisi", "kondisi", "conditions", "condition"]));
+  toTextList(
+    getFirstValue(article, ["conditions", "condition"]) ||
+      getFirstValue(article?.details, ["Kondisi", "kondisi", "conditions", "condition"]),
+  );
 
 const htmlToSearchText = (value) =>
   String(value || "")
@@ -300,13 +316,15 @@ const getInstructionContent = (value, { includeInstructionText = false } = {}) =
 
 const normalizeHandlingSteps = (article, options = {}) => {
   const { includeInstructionText = false } = options;
-  const rawSteps = getFirstValue(article?.details, [
-    "Penanganan",
-    "penanganan",
-    "handling",
-    "steps",
-    "alurPenanganan",
-  ]);
+  const rawSteps =
+    getFirstValue(article, ["contentBlocks", "content_blocks"]) ||
+    getFirstValue(article?.details, [
+      "Penanganan",
+      "penanganan",
+      "handling",
+      "steps",
+      "alurPenanganan",
+    ]);
 
   if (typeof rawSteps === "string") {
     const instructions = toTextList(rawSteps);
@@ -334,7 +352,7 @@ const normalizeHandlingSteps = (article, options = {}) => {
 
   if (!Array.isArray(rawSteps)) return [];
 
-  return rawSteps
+  return sortByOrder(rawSteps)
     .map((step, index) => {
       if (typeof step === "string") {
         return {
