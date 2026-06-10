@@ -41,6 +41,7 @@ const getForgotPasswordTelegramUrl = (email) => {
 };
 
 const Login = ({ setCloseModal }) => {
+  const [showPassword, setShowPassword] = useState(false);
   const { login, register } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -84,7 +85,10 @@ const Login = ({ setCloseModal }) => {
 
     if (result.success) {
       if (isPasswordChangeRequired(result.user)) {
-        showToast("Login berhasil. Silakan ganti password terlebih dahulu.", "success");
+        showToast(
+          "Login berhasil. Silakan ganti password terlebih dahulu.",
+          "success",
+        );
         navigate("/cek-me", { replace: true });
       } else {
         showToast("Login berhasil.", "success");
@@ -92,7 +96,10 @@ const Login = ({ setCloseModal }) => {
       setLoginForm(LOGIN_FORM);
       setCloseModal?.();
     } else {
-      const message = getFriendlyAuthError(result.error, "Email atau password salah.");
+      const message = getFriendlyAuthError(
+        result.error,
+        "Email atau password salah.",
+      );
       setError(message);
       showToast(message, "error");
     }
@@ -125,14 +132,18 @@ const Login = ({ setCloseModal }) => {
       setRegisterForm(REGISTER_FORM);
       setCloseModal?.();
     } else if (result.success) {
-      const message = "Registrasi berhasil. Silakan login dengan akun baru Anda.";
+      const message =
+        "Registrasi berhasil. Silakan login dengan akun baru Anda.";
       showToast(message, "success");
       setSuccessMessage(message);
       setLoginForm({ email: registerForm.email, password: "" });
       setRegisterForm(REGISTER_FORM);
       setMode("login");
     } else {
-      const message = getFriendlyAuthError(result.error, "Registrasi gagal, silakan coba lagi.");
+      const message = getFriendlyAuthError(
+        result.error,
+        "Registrasi gagal, silakan coba lagi.",
+      );
       setError(message);
       showToast(message, "error");
     }
@@ -166,7 +177,10 @@ const Login = ({ setCloseModal }) => {
       {isRegisterMode ? (
         <form onSubmit={handleRegisterSubmit} className="space-y-4">
           <div>
-            <label htmlFor="register-username" className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">
+            <label
+              htmlFor="register-username"
+              className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300"
+            >
               Username / Nama
             </label>
             <input
@@ -182,7 +196,10 @@ const Login = ({ setCloseModal }) => {
           </div>
 
           <div>
-            <label htmlFor="register-email" className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">
+            <label
+              htmlFor="register-email"
+              className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300"
+            >
               Email
             </label>
             <input
@@ -198,7 +215,10 @@ const Login = ({ setCloseModal }) => {
           </div>
 
           <div>
-            <label htmlFor="register-password" className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">
+            <label
+              htmlFor="register-password"
+              className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300"
+            >
               Password
             </label>
             <input
@@ -214,7 +234,10 @@ const Login = ({ setCloseModal }) => {
           </div>
 
           <div>
-            <label htmlFor="register-confirm-password" className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">
+            <label
+              htmlFor="register-confirm-password"
+              className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300"
+            >
               Konfirmasi Password
             </label>
             <input
@@ -240,7 +263,10 @@ const Login = ({ setCloseModal }) => {
       ) : (
         <form onSubmit={handleLoginSubmit} className="space-y-4">
           <div>
-            <label htmlFor="login-email" className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">
+            <label
+              htmlFor="login-email"
+              className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300"
+            >
               Email
             </label>
             <input
@@ -256,19 +282,32 @@ const Login = ({ setCloseModal }) => {
           </div>
 
           <div>
-            <label htmlFor="login-password" className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">
+            <label
+              htmlFor="login-password"
+              className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300"
+            >
               Password
             </label>
-            <input
-              id="login-password"
-              name="password"
-              type="password"
-              value={loginForm.password}
-              onChange={handleLoginChange}
-              className={inputClassName}
-              autoComplete="current-password"
-              required
-            />
+            <div className="relative">
+              <input
+                id="login-password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                value={loginForm.password}
+                onChange={handleLoginChange}
+                className={`${inputClassName} pr-20`}
+                autoComplete="current-password"
+                required
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
           </div>
 
           <button
@@ -297,14 +336,22 @@ const Login = ({ setCloseModal }) => {
         {isRegisterMode ? (
           <>
             Sudah punya akun?{" "}
-            <button type="button" onClick={showLogin} className="font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200">
+            <button
+              type="button"
+              onClick={showLogin}
+              className="font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200"
+            >
               Kembali ke Login
             </button>
           </>
         ) : (
           <>
             Belum punya akun?{" "}
-            <button type="button" onClick={showRegister} className="font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200">
+            <button
+              type="button"
+              onClick={showRegister}
+              className="font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200"
+            >
               Registrasi
             </button>
           </>
