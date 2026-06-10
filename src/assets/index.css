@@ -506,10 +506,23 @@ body {
 :is(.template-chat-content, .article-content, .internal-instruction-content, .template-chat-editor .ql-editor) ul {
   margin: 0.75rem 0;
   padding-left: 1.5rem;
+  max-width: 100%;
 }
 
 :is(.template-chat-content, .article-content, .internal-instruction-content, .template-chat-editor .ql-editor) li {
   padding-left: 0.25rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+:is(.template-chat-content, .article-content, .internal-instruction-content, .template-chat-editor .ql-editor) p,
+:is(.template-chat-content, .article-content, .internal-instruction-content, .template-chat-editor .ql-editor) div,
+:is(.template-chat-content, .article-content, .internal-instruction-content, .template-chat-editor .ql-editor) span,
+:is(.template-chat-content, .article-content, .internal-instruction-content, .template-chat-editor .ql-editor) a {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* Hilangkan UI marker bawaan Quill v2 supaya tidak dobel */
@@ -564,7 +577,8 @@ body {
 :is(.template-chat-content, .article-content, .internal-instruction-content, .template-chat-editor .ql-editor) ol:has(> li[data-list]) > li[data-list="ordered"].ql-indent-1 {
   counter-increment: ql-list-1;
   counter-reset: ql-list-2 ql-list-3 ql-list-4;
-  margin-left: 1.5rem !important;
+  margin-left: 0 !important;
+  padding-left: 3rem !important;
 }
 
 :is(.template-chat-content, .article-content, .internal-instruction-content, .template-chat-editor .ql-editor) ol:has(> li[data-list]) > li[data-list="ordered"].ql-indent-1::before {
@@ -575,7 +589,8 @@ body {
 :is(.template-chat-content, .article-content, .internal-instruction-content, .template-chat-editor .ql-editor) ol:has(> li[data-list]) > li[data-list="ordered"].ql-indent-2 {
   counter-increment: ql-list-2;
   counter-reset: ql-list-3 ql-list-4;
-  margin-left: 3rem !important;
+  margin-left: 0 !important;
+  padding-left: 4rem !important;
 }
 
 :is(.template-chat-content, .article-content, .internal-instruction-content, .template-chat-editor .ql-editor) ol:has(> li[data-list]) > li[data-list="ordered"].ql-indent-2::before {
@@ -586,7 +601,8 @@ body {
 :is(.template-chat-content, .article-content, .internal-instruction-content, .template-chat-editor .ql-editor) ol:has(> li[data-list]) > li[data-list="ordered"].ql-indent-3 {
   counter-increment: ql-list-3;
   counter-reset: ql-list-4;
-  margin-left: 4.5rem !important;
+  margin-left: 0 !important;
+  padding-left: 4.5rem !important;
 }
 
 :is(.template-chat-content, .article-content, .internal-instruction-content, .template-chat-editor .ql-editor) ol:has(> li[data-list]) > li[data-list="ordered"].ql-indent-3::before {
@@ -600,12 +616,14 @@ body {
 }
 
 :is(.template-chat-content, .article-content, .internal-instruction-content, .template-chat-editor .ql-editor) ol:has(> li[data-list]) > li[data-list="bullet"].ql-indent-1 {
-  margin-left: 1.5rem !important;
+  margin-left: 0 !important;
+  padding-left: 3rem !important;
   list-style-type: circle;
 }
 
 :is(.template-chat-content, .article-content, .internal-instruction-content, .template-chat-editor .ql-editor) ol:has(> li[data-list]) > li[data-list="bullet"].ql-indent-2 {
-  margin-left: 3rem !important;
+  margin-left: 0 !important;
+  padding-left: 4rem !important;
   list-style-type: square;
 }
 

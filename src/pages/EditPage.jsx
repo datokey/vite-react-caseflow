@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import TextareaAutosize from "react-textarea-autosize";
+import GenerateRuleDraftButton from "../components/GenerateRuleDraftButton";
 import InternalInstructionEditor from "../components/InternalInstructionEditor";
 import KeywordTagInput from "../components/KeywordTagInput";
 import TemplateChatEditor from "../components/TemplateChatEditor";
@@ -9,6 +10,7 @@ import { useToast } from "../hooks/useToast";
 import { ARTICLE_MESSAGES } from "../lib/articleConstants";
 import { htmlToPlainText } from "../lib/htmlUtils";
 import { keywordService } from "../services/keywordService";
+import { sopRuleService } from "../services/sopRuleService";
 
 const DEFAULT_CATATAN = "Tidak ada catatan pada template ini";
 
@@ -30,6 +32,21 @@ const createEmptyStep = () => ({
 
 const getStepKey = (step, index) => step?._id || step?.id || `step-${index}`;
 
+const getGeneratedRuleJson = (draftResult) => {
+  const draft = draftResult?.draft || {};
+  const rules = Array.isArray(draft.draftRules)
+    ? draft.draftRules
+    : Array.isArray(draft.sop_rules)
+      ? draft.sop_rules
+      : Array.isArray(draft.sopRules)
+        ? draft.sopRules
+        : Array.isArray(draft.rules)
+          ? draft.rules
+          : [];
+
+  return JSON.stringify(rules, null, 2);
+};
+
 export default function EditPage() {
   const { id } = useParams();
   const { showToast } = useToast();
@@ -47,6 +64,9 @@ export default function EditPage() {
     loading,
   } = useEditArticle(id);
   const [showVariableMenu, setShowVariableMenu] = useState({});
+  const [showGeneratedRuleJson, setShowGeneratedRuleJson] = useState(false);
+  const [generatedRuleJson, setGeneratedRuleJson] = useState("[]");
+  const [isLoadingRuleJson, setIsLoadingRuleJson] = useState(false);
   const [isSavingKeyword, setIsSavingKeyword] = useState(false);
   const [fallbackStep] = useState(createEmptyStep);
 
@@ -54,6 +74,33 @@ export default function EditPage() {
     Array.isArray(formData.details?.Penanganan) && formData.details.Penanganan.length > 0
       ? formData.details.Penanganan
       : [fallbackStep];
+
+  useEffect(() => {
+    if (!id || loading || error) return undefined;
+
+    let isActive = true;
+
+    const loadSopRules = async () => {
+      try {
+        setIsLoadingRuleJson(true);
+        const rules = await sopRuleService.getRulesBySopId(id);
+        if (!isActive) return;
+        setGeneratedRuleJson(JSON.stringify(rules, null, 2));
+      } catch (ruleError) {
+        if (!isActive) return;
+        setGeneratedRuleJson("[]");
+        showToast(ruleError?.message || "Gagal memuat JSON rule SOP dari database.", "error");
+      } finally {
+        if (isActive) setIsLoadingRuleJson(false);
+      }
+    };
+
+    loadSopRules();
+
+    return () => {
+      isActive = false;
+    };
+  }, [error, id, loading, showToast]);
 
   const handleTitleChange = (value) => {
     handleInputChange({ target: { name: "title", value } });
@@ -382,6 +429,14 @@ export default function EditPage() {
               >
                 Batal
               </button>
+              <GenerateRuleDraftButton
+                disabled={isSaving || isSavingKeyword}
+                onDraftGenerated={(draftResult) => setGeneratedRuleJson(getGeneratedRuleJson(draftResult))}
+                onBeforeGenerate={validateForm}
+                promptContext={formData}
+                sopId={id}
+                className="flex-1"
+              />
               <button
                 type="submit"
                 disabled={isSaving || isSavingKeyword}
@@ -414,6 +469,42 @@ export default function EditPage() {
                   "Simpan Perubahan"
                 )}
               </button>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-white">JSON Rule SOP AI</h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    Menampilkan JSON <span className="font-semibold">sop_rules</span> dari database untuk SOP ini.
+                    Setelah generate/import AI berhasil, isi field ini akan diperbarui dengan draft terbaru.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowGeneratedRuleJson((isVisible) => !isVisible)}
+                  className="inline-flex h-10 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-4 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/20"
+                >
+                  {showGeneratedRuleJson ? "Sembunyikan" : "Tampilkan"}
+                </button>
+              </div>
+
+              {showGeneratedRuleJson && (
+                <div className="mt-4">
+                  {isLoadingRuleJson && (
+                    <p className="mb-2 text-sm font-semibold text-indigo-600 dark:text-indigo-300">
+                      Memuat rule SOP dari database...
+                    </p>
+                  )}
+                  <textarea
+                    value={generatedRuleJson}
+                    onChange={(event) => setGeneratedRuleJson(event.target.value)}
+                    spellCheck={false}
+                    rows={14}
+                    className="w-full rounded-lg border border-slate-300 bg-slate-950 px-4 py-3 font-mono text-xs leading-5 text-slate-100 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-950"
+                  />
+                </div>
+              )}
             </div>
           </form>
         )}

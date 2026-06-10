@@ -37,11 +37,11 @@ export const ToastProvider = ({ children }) => {
           animation: slideInFromTop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
       `}</style>
-      <div className="fixed top-20 right-4 z-50 flex flex-col items-end gap-3 px-4 pointer-events-none">
+      <div className="fixed top-20 right-4 z-[9999] flex flex-col items-end gap-3 px-4 pointer-events-none">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto w-full max-w-sm rounded-3xl border px-4 py-3 text-sm font-medium shadow-xl toast-notification ${
+            className={`pointer-events-auto w-full max-w-sm rounded-3xl border px-4 py-3 text-sm font-medium shadow-2xl ring-1 ring-white/10 toast-notification ${
               toast.variant === "success"
                 ? "bg-emerald-500 text-white border-emerald-600 dark:bg-emerald-600 dark:border-emerald-700"
                 : toast.variant === "error"

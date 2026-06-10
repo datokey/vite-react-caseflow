@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AuthModal from "./components/AuthModal";
+import DecisionAssistantMode from "./components/DecisionAssistantMode";
 import Navbar from "./components/Navbar"; 
 import QuickNotesDrawer from "./components/QuickNotesDrawer";
 import SanitizedHtmlRenderer from "./components/SanitizedHtmlRenderer";
@@ -21,6 +22,7 @@ import { recordingService } from "./services/recordingService";
 import { sopUsageService } from "./services/sopUsageService";
 
 const NAME_PLACEHOLDER = "Nama Pelanggan";
+const CUSTOMER_NAME_INPUT_PLACEHOLDER = "Nama User";
 const GREETING_PLACEHOLDER = "Bapak/Ibu";
 const SEARCH_HIGHLIGHT_MARK_CLASS = "sop-search-highlight";
 const SEARCH_HIGHLIGHT_PULSE_CLASS = "sop-search-highlight-pulse";
@@ -51,6 +53,11 @@ const toText = (value) => {
 
   return "";
 };
+
+const toTitleCaseName = (value) =>
+  String(value || "")
+    .toLowerCase()
+    .replace(/(^|[\s'-])([a-z])/g, (_, prefix, letter) => `${prefix}${letter.toUpperCase()}`);
 
 const normalizeRoleLabel = (value) => toText(value).toLowerCase().replace(/[\s-]+/g, "_");
 
@@ -93,6 +100,25 @@ const canManageSop = (user) => {
     .some((role) =>
       ["admin", "administrator", "super_admin", "superadmin"].includes(role),
     );
+};
+
+const isSuperAdminUser = (user) => {
+  if (!user) return false;
+  if (user.isSuperAdmin || user.is_super_admin) return true;
+
+  const roleSources = [
+    user.role,
+    user.userRole,
+    user.roleName,
+    user.type,
+    user.accessLevel,
+    ...(Array.isArray(user.roles) ? user.roles : []),
+  ];
+
+  return roleSources
+    .map(roleValueToText)
+    .map(normalizeRoleLabel)
+    .some((role) => ["superadmin", "super_admin"].includes(role));
 };
 
 const canAccessAdminRoute = (user) => {
@@ -784,6 +810,7 @@ function SopWorkspace({
   customerName,
   isDeleting,
   onEdit,
+  onCopyCustomerName,
   onCopyTemplate,
   onCustomerGreetingChange,
   onCustomerNameChange,
@@ -838,17 +865,26 @@ function SopWorkspace({
             </div>
           )}
 
-          <div className="grid w-full gap-3 sm:grid-cols-[minmax(0,1fr)_9rem] xl:max-w-xl">
+          <div className="grid w-full gap-3 sm:grid-cols-[minmax(0,1fr)_auto_9rem] xl:max-w-2xl">
             <label className="block">
-              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Nama pelanggan</span>
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Nama User</span>
               <input
                 type="text"
                 value={customerName}
                 onChange={(event) => onCustomerNameChange(event.target.value)}
-                placeholder={NAME_PLACEHOLDER}
+                placeholder={CUSTOMER_NAME_INPUT_PLACEHOLDER}
                 className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-500/20"
               />
             </label>
+
+            <button
+              type="button"
+              onClick={onCopyCustomerName}
+              disabled={!customerName.trim()}
+              className="inline-flex h-[42px] items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-4 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50 sm:self-end dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/20"
+            >
+              Copy Nama User
+            </button>
 
             <label className="block">
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Sapaan</span>
@@ -957,6 +993,53 @@ function EmptyWorkspace({ title, message }) {
   );
 }
 
+function BetaBadge() {
+  return (
+    <span className="rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-black uppercase leading-none text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+      Beta
+    </span>
+  );
+}
+
+function SopModeTabs({ canShowDetailSop, canUseDecisionAssistant, mode, onModeChange }) {
+  const tabs = [
+    ...(canShowDetailSop ? [{ label: "Detail SOP", value: "detail" }] : []),
+    ...(canUseDecisionAssistant
+      ? [{ isBeta: true, label: "Bantu Pilih SOP", value: "decision" }]
+      : []),
+  ];
+
+  if (!tabs.length) return null;
+
+  return (
+    <div className="border-b border-slate-200 bg-white px-5 py-3 sm:px-8 dark:border-slate-800 dark:bg-slate-950">
+      <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-900">
+        {tabs.map((tab) => {
+          const isActive = mode === tab.value;
+
+          return (
+            <button
+              key={tab.value}
+              type="button"
+              onClick={() => onModeChange(tab.value)}
+              className={`h-9 rounded-md px-3 text-sm font-bold transition ${
+                isActive
+                  ? "bg-indigo-600 text-white shadow-sm dark:bg-indigo-500"
+                  : "text-slate-600 hover:bg-white hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+              }`}
+            >
+              <span className="inline-flex items-center gap-2">
+                {tab.label}
+                {tab.isBeta && <BetaBadge />}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function DeleteConfirmationModal({ article, isDeleting, onCancel, onConfirm }) {
   if (!article) return null;
 
@@ -1030,7 +1113,8 @@ function DeleteConfirmationModal({ article, isDeleting, onCancel, onConfirm }) {
 }
 
 const RECORDING_CHANNELS = [
-  { key: "whatsapp", label: "WhatsApp", icon: "whatsapp", colorClass: "bg-emerald-500" },
+  { key: "wa-cc", label: "WA CC", icon: "whatsapp", colorClass: "bg-emerald-500" },
+  { key: "wa-g", label: "WA G", icon: "whatsapp", colorClass: "bg-lime-800" },
   { key: "email", label: "Email", icon: "email", colorClass: "bg-sky-500" },
   { key: "livechat", label: "Livechat", icon: "livechat", colorClass: "bg-violet-500" },
   { key: "tiktok", label: "TikTok", icon: "tiktok", colorClass: "bg-slate-950" },
@@ -1612,11 +1696,13 @@ function HomePage() {
   const [deleteTargetArticle, setDeleteTargetArticle] = useState(null);
   const [frequentlyUsedSops, setFrequentlyUsedSops] = useState([]);
   const [isDeletingArticle, setIsDeletingArticle] = useState(false);
+  const [sopMode, setSopMode] = useState("detail");
   const searchInputRef = useRef(null);
   const searchPulseTimeoutRef = useRef(null);
   const searchPulseCleanupTimeoutRef = useRef(null);
   const lastPulsedSearchKeyRef = useRef("");
   const userCanManageSop = useMemo(() => canManageSop(user), [user]);
+  const userIsSuperAdmin = useMemo(() => isSuperAdminUser(user), [user]);
 
   const articles = useMemo(
     () => (Array.isArray(loadedArticles) ? loadedArticles : []),
@@ -1669,12 +1755,39 @@ function HomePage() {
       filteredArticles.find((article) => getSopId(article) === visibleSelectedArticleId) || null,
     [filteredArticles, visibleSelectedArticleId],
   );
+  const visibleSopMode = sopMode === "decision" && !userCanManageSop ? "detail" : sopMode;
 
   const handleSelectArticle = useCallback((sopId) => {
     if (!sopId) return;
     saveLastSelectedSopId(sopId);
     setSelectedArticleId(sopId);
+    setSopMode("detail");
   }, []);
+
+  const handleDecisionManualSearch = useCallback(() => {
+    setSopMode("detail");
+    window.setTimeout(() => searchInputRef.current?.focus(), 0);
+  }, []);
+
+  const handleOpenDecisionSop = useCallback(
+    (sopId) => {
+      if (!sopId) {
+        showToast("ID SOP dari decision belum tersedia.", "error");
+        return;
+      }
+
+      const sopExists = articles.some((article) => getSopId(article) === sopId);
+
+      if (!sopExists) {
+        showToast("SOP hasil decision belum ada di daftar SOP yang dimuat.", "error");
+        return;
+      }
+
+      handleSelectArticle(sopId);
+      setSopMode("detail");
+    },
+    [articles, handleSelectArticle, showToast],
+  );
 
   const loadFrequentlyUsedSops = useCallback(async () => {
     if (!isAuthenticated) {
@@ -1805,6 +1918,26 @@ function HomePage() {
     }
   };
 
+  const handleCustomerNameChange = useCallback((value) => {
+    setCustomerName(toTitleCaseName(value));
+  }, []);
+
+  const handleCopyCustomerName = async () => {
+    const nameToCopy = customerName.trim();
+
+    if (!nameToCopy) {
+      showToast("Nama user masih kosong.", "error");
+      return;
+    }
+
+    try {
+      await writeClipboardText(nameToCopy);
+      showToast("Nama user berhasil disalin.", "success");
+    } catch {
+      showToast("Gagal menyalin nama user.", "error");
+    }
+  };
+
   const handleEditArticle = (article) => {
     const sopId = getSopId(article);
 
@@ -1924,6 +2057,15 @@ function HomePage() {
         </aside>
 
         <section className="lg:h-[calc(100vh-4rem)] lg:overflow-y-auto">
+        {isAuthenticated && !shouldShowArticleLoading && !shouldShowArticleError && (
+          <SopModeTabs
+            canShowDetailSop={userIsSuperAdmin}
+            canUseDecisionAssistant={userCanManageSop}
+            mode={visibleSopMode}
+            onModeChange={setSopMode}
+          />
+        )}
+
         {shouldShowArticleLoading && (
           <EmptyWorkspace
             title={isAuthLoading ? "Memeriksa sesi" : "Memuat SOP"}
@@ -1945,14 +2087,22 @@ function HomePage() {
           />
         )}
 
-        {isAuthenticated && !isLoadingArticles && !isErrorArticles && !selectedArticle && (
+        {isAuthenticated && userCanManageSop && !isLoadingArticles && !isErrorArticles && visibleSopMode === "decision" && (
+          <DecisionAssistantMode
+            articles={articles}
+            onManualSearch={handleDecisionManualSearch}
+            onOpenSop={handleOpenDecisionSop}
+          />
+        )}
+
+        {isAuthenticated && !isLoadingArticles && !isErrorArticles && visibleSopMode === "detail" && !selectedArticle && (
           <EmptyWorkspace
             title="SOP tidak ditemukan"
             message="Coba gunakan kata kunci lain pada panel pencarian."
           />
         )}
 
-        {isAuthenticated && !isLoadingArticles && !isErrorArticles && selectedArticle && (
+        {isAuthenticated && !isLoadingArticles && !isErrorArticles && visibleSopMode === "detail" && selectedArticle && (
           <SopWorkspace
             article={selectedArticle}
             canManage={userCanManageSop}
@@ -1961,9 +2111,10 @@ function HomePage() {
             customerName={customerName}
             isDeleting={isDeletingArticle && getSopId(deleteTargetArticle) === getSopId(selectedArticle)}
             onEdit={() => handleEditArticle(selectedArticle)}
+            onCopyCustomerName={handleCopyCustomerName}
             onCopyTemplate={handleCopyTemplate}
             onCustomerGreetingChange={setCustomerGreeting}
-            onCustomerNameChange={setCustomerName}
+            onCustomerNameChange={handleCustomerNameChange}
             onRequestDelete={() => handleRequestDeleteArticle(selectedArticle)}
             searchQuery={searchQuery}
           />

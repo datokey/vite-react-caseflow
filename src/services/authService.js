@@ -1,11 +1,11 @@
 import { apiRequest } from "../lib/apiClient";
 
 const AUTH_ENDPOINTS = {
-  changePassword: import.meta.env.VITE_ENDPOINT_AUTH_CHANGE_PASSWORD,
-  login: import.meta.env.VITE_ENDPOINT_AUTH_LOGIN,
-  logout: import.meta.env.VITE_ENDPOINT_AUTH_LOGOUT,
-  me: import.meta.env.VITE_ENDPOINT_AUTH_ME,
-  register: import.meta.env.VITE_ENDPOINT_AUTH_REGISTER,
+  changePassword: import.meta.env.VITE_ENDPOINT_AUTH_CHANGE_PASSWORD || "/api/auth/change-password",
+  login: import.meta.env.VITE_ENDPOINT_AUTH_LOGIN || "/api/auth/login",
+  logout: import.meta.env.VITE_ENDPOINT_AUTH_LOGOUT || "/api/auth/logout",
+  me: import.meta.env.VITE_ENDPOINT_AUTH_ME || "/api/auth/me",
+  register: import.meta.env.VITE_ENDPOINT_AUTH_REGISTER || "/api/auth/register",
 };
 
 const getUserFromResponse = (data) => {

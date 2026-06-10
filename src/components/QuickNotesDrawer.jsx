@@ -1,31 +1,39 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useToast } from "../hooks/useToast";
 
-const STORAGE_KEY = "quickNotesByUserTab";
-const NOTE_TABS = [
-  { id: "user1", label: "User 1" },
-  { id: "user2", label: "User 2" },
-  { id: "user3", label: "User 3" },
-];
+const STORAGE_KEY = "quickNotes";
+const LEGACY_STORAGE_KEY = "quickNotesByUserTab";
+const STORAGE_WIDTH_KEY = "quickNotesDrawerWidth";
+const DEFAULT_DRAWER_WIDTH = 448;
+const MIN_DRAWER_WIDTH = 320;
 
-const createEmptyNotes = () =>
-  NOTE_TABS.reduce((notes, tab) => {
-    notes[tab.id] = "";
-    return notes;
-  }, {});
+const getMaxDrawerWidth = () =>
+  typeof window === "undefined" ? 704 : Math.max(MIN_DRAWER_WIDTH, Math.floor(window.innerWidth * 0.7));
 
 const loadStoredNotes = () => {
-  if (typeof window === "undefined") return createEmptyNotes();
+  if (typeof window === "undefined") return "";
 
   try {
-    const parsedNotes = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "{}");
-    return {
-      ...createEmptyNotes(),
-      ...(parsedNotes && typeof parsedNotes === "object" ? parsedNotes : {}),
-    };
+    const currentNote = window.localStorage.getItem(STORAGE_KEY);
+    if (typeof currentNote === "string") return currentNote;
+
+    const legacyNotes = JSON.parse(window.localStorage.getItem(LEGACY_STORAGE_KEY) || "{}");
+    if (legacyNotes && typeof legacyNotes === "object") {
+      return legacyNotes.user1 || legacyNotes.user2 || legacyNotes.user3 || "";
+    }
+
+    return "";
   } catch {
-    return createEmptyNotes();
+    return "";
   }
+};
+
+const loadStoredDrawerWidth = () => {
+  if (typeof window === "undefined") return DEFAULT_DRAWER_WIDTH;
+
+  const storedWidth = Number(window.localStorage.getItem(STORAGE_WIDTH_KEY));
+  if (!Number.isFinite(storedWidth)) return DEFAULT_DRAWER_WIDTH;
+  return Math.min(getMaxDrawerWidth(), Math.max(MIN_DRAWER_WIDTH, storedWidth));
 };
 
 function NotesIcon() {
@@ -70,40 +78,70 @@ function CloseIcon() {
 
 export default function QuickNotesDrawer() {
   const { showToast } = useToast();
-  const [activeTabId, setActiveTabId] = useState(NOTE_TABS[0].id);
   const [isOpen, setIsOpen] = useState(false);
-  const [notes, setNotes] = useState(loadStoredNotes);
+  const [note, setNote] = useState(loadStoredNotes);
+  const [drawerWidth, setDrawerWidth] = useState(loadStoredDrawerWidth);
   const textareaRef = useRef(null);
-  const activeNote = notes[activeTabId] || "";
-  const hasAnyNote = useMemo(
-    () => NOTE_TABS.some((tab) => (notes[tab.id] || "").trim()),
-    [notes],
-  );
+  const isResizingRef = useRef(false);
+  const hasAnyNote = Boolean(note.trim());
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
-  }, [notes]);
+    window.localStorage.setItem(STORAGE_KEY, note);
+  }, [note]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(STORAGE_WIDTH_KEY, String(drawerWidth));
+  }, [drawerWidth]);
+
+  useEffect(() => {
+    const handlePointerMove = (event) => {
+      if (!isResizingRef.current) return;
+
+      const maxWidth = getMaxDrawerWidth();
+      const newWidth = Math.max(
+        MIN_DRAWER_WIDTH,
+        Math.min(maxWidth, window.innerWidth - event.clientX),
+      );
+
+      setDrawerWidth(newWidth);
+    };
+
+    const stopResize = () => {
+      if (!isResizingRef.current) return;
+      isResizingRef.current = false;
+    };
+
+    document.addEventListener("pointermove", handlePointerMove);
+    document.addEventListener("pointerup", stopResize);
+    document.addEventListener("pointercancel", stopResize);
+
+    return () => {
+      document.removeEventListener("pointermove", handlePointerMove);
+      document.removeEventListener("pointerup", stopResize);
+      document.removeEventListener("pointercancel", stopResize);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
     const focusTimeout = window.setTimeout(() => textareaRef.current?.focus(), 150);
     return () => window.clearTimeout(focusTimeout);
-  }, [activeTabId, isOpen]);
+  }, [isOpen]);
 
   const handleNoteChange = (event) => {
-    const { value } = event.target;
-    setNotes((currentNotes) => ({ ...currentNotes, [activeTabId]: value }));
+    setNote(event.target.value);
   };
 
   const handleCopyAll = async () => {
-    if (!activeNote.trim()) {
+    if (!note.trim()) {
       showToast("Catatan masih kosong.", "error");
       return;
     }
 
     try {
-      await navigator.clipboard.writeText(activeNote);
+      await navigator.clipboard.writeText(note);
       showToast("Catatan berhasil disalin.", "success");
     } catch {
       showToast("Gagal menyalin catatan.", "error");
@@ -111,12 +149,12 @@ export default function QuickNotesDrawer() {
   };
 
   const handleClear = () => {
-    if (!activeNote.trim()) return;
+    if (!note.trim()) return;
 
-    const confirmed = window.confirm("Hapus catatan pada tab ini?");
+    const confirmed = window.confirm("Hapus catatan cepat ini?");
     if (!confirmed) return;
 
-    setNotes((currentNotes) => ({ ...currentNotes, [activeTabId]: "" }));
+    setNote("");
     showToast("Catatan berhasil dihapus.", "success");
   };
 
@@ -148,11 +186,21 @@ export default function QuickNotesDrawer() {
         />
 
         <aside
-          className={`absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-slate-200 bg-white shadow-2xl transition-transform duration-300 dark:border-slate-800 dark:bg-slate-950 sm:w-[28rem] ${
+          className={`absolute right-0 top-0 flex h-full flex-col border-l border-slate-200 bg-white shadow-2xl transition-transform duration-300 dark:border-slate-800 dark:bg-slate-950 ${
             isOpen ? "translate-x-0" : "translate-x-full"
           }`}
+          style={{ width: drawerWidth, minWidth: MIN_DRAWER_WIDTH, maxWidth: "100%" }}
           aria-label="Catatan Cepat"
         >
+          <button
+            type="button"
+            aria-label="Ubah ukuran drawer catatan cepat"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              isResizingRef.current = true;
+            }}
+            className="absolute left-0 top-0 h-full w-2 cursor-ew-resize bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+          />
           <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-800">
             <div>
               <p className="text-xl font-black uppercase text-amber-600 dark:text-amber-300">Quick Notes</p>
@@ -169,34 +217,21 @@ export default function QuickNotesDrawer() {
           </div>
 
           <div className="flex gap-2 border-b border-slate-200 px-5 py-3 dark:border-slate-800">
-            {NOTE_TABS.map((tab) => {
-              const isActive = activeTabId === tab.id;
-              const hasContent = Boolean((notes[tab.id] || "").trim());
-
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTabId(tab.id)}
-                  className={`relative inline-flex h-9 flex-1 items-center justify-center rounded-lg px-3 text-sm font-bold transition ${
-                    isActive
-                      ? "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-100"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  {tab.label}
-                  {hasContent && (
-                    <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-emerald-500" />
-                  )}
-                </button>
-              );
-            })}
+            <button
+              type="button"
+              className="relative inline-flex h-9 flex-1 items-center justify-center rounded-lg bg-amber-100 px-3 text-sm font-bold text-amber-800 transition dark:bg-amber-500/20 dark:text-amber-100"
+            >
+              Quick notes
+              {hasAnyNote && (
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-emerald-500" />
+              )}
+            </button>
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col gap-4 p-5">
             <textarea
               ref={textareaRef}
-              value={activeNote}
+              value={note}
               onChange={handleNoteChange}
               placeholder="Tulis catatan cepat di sini..."
               className="min-h-0 flex-1 resize-none rounded-lg border border-amber-200 bg-yellow-50 p-4 text-sm leading-6 text-slate-900 shadow-inner outline-none transition placeholder:text-amber-700/50 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 dark:border-amber-500/30 dark:bg-amber-200/10 dark:text-amber-50 dark:placeholder:text-amber-100/40 dark:focus:border-amber-300 dark:focus:ring-amber-300/20"

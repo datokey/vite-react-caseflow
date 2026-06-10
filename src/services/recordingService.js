@@ -7,7 +7,26 @@ const RECORDING_ENDPOINTS = {
   reset: import.meta.env.VITE_ENDPOINT_RECORDING_RESET,
 };
 
-const CHANNEL_KEYS = ["whatsapp", "email", "livechat", "tiktok", "fb", "ig", "x", "call"];
+const CHANNEL_KEYS = ["wa-cc", "wa-g", "email", "livechat", "tiktok", "fb", "x", "ig", "call"];
+const CHANNEL_ALIASES = {
+  facebook: "fb",
+  instagram: "ig",
+  "live chat": "livechat",
+  phone: "call",
+  twitter: "x",
+  wa: "wa-cc",
+  "wa cc": "wa-cc",
+  "wa g": "wa-g",
+  "wa-cc": "wa-cc",
+  "wa-g": "wa-g",
+  whatsapp: "wa-cc",
+  "whatsapp cc": "wa-cc",
+  "whatsapp g": "wa-g",
+  "whatsapp-cc": "wa-cc",
+  "whatsapp-g": "wa-g",
+  whatsappcc: "wa-cc",
+  whatsappg: "wa-g",
+};
 
 const toCounterNumber = (value) => {
   const parsedValue = Number(value);
@@ -18,7 +37,12 @@ const readCounterValue = (item) =>
   item?.count ?? item?.counter ?? item?.total ?? item?.value ?? item?.jumlah ?? item?.tickets ?? 0;
 
 const readChannelKey = (item) =>
-  String(item?.channel ?? item?.name ?? item?.key ?? item?.type ?? "").trim().toLowerCase();
+  normalizeChannelKey(item?.channel ?? item?.name ?? item?.key ?? item?.type ?? "");
+
+const normalizeChannelKey = (value) => {
+  const normalized = String(value || "").trim().toLowerCase();
+  return CHANNEL_ALIASES[normalized] || normalized;
+};
 
 const buildQueryString = (params = {}) => {
   const queryString = new URLSearchParams(params).toString();
@@ -59,8 +83,20 @@ const normalizeCounters = (data) => {
 
   if (source && typeof source === "object") {
     CHANNEL_KEYS.forEach((channel) => {
-      counters[channel] = toCounterNumber(source[channel] ?? source[channel.toUpperCase()] ?? source[channel.toLowerCase()]);
+      counters[channel] = toCounterNumber(
+        source[channel] ??
+          source[channel.toUpperCase()] ??
+          source[channel.toLowerCase()] ??
+          source[channel.replace(/-/g, "")],
+      );
     });
+
+    if (!counters["wa-cc"]) {
+      counters["wa-cc"] = toCounterNumber(source.whatsapp ?? source.WhatsApp ?? source.WHATSAPP ?? source.waCc);
+    }
+    if (!counters["wa-g"]) {
+      counters["wa-g"] = toCounterNumber(source.waG ?? source.whatsappG ?? source["whatsapp-g"]);
+    }
   }
 
   return counters;
@@ -109,7 +145,7 @@ const normalizeStatistics = (data) => ({
 
 const getCounterFromResponse = (data, channel, fallbackValue) => {
   const counters = normalizeCounters(data);
-  const normalizedChannel = channel.toLowerCase();
+  const normalizedChannel = normalizeChannelKey(channel);
 
   return counters[normalizedChannel] || toCounterNumber(data?.count ?? data?.counter ?? data?.total ?? data?.data?.count ?? data?.data?.counter ?? fallbackValue);
 };

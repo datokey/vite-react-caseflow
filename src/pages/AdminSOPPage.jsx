@@ -1,5 +1,6 @@
 import { useState } from "react";
 import TextareaAutosize from "react-textarea-autosize";
+import GenerateRuleDraftButton from "../components/GenerateRuleDraftButton";
 import InternalInstructionEditor from "../components/InternalInstructionEditor";
 import KeywordTagInput from "../components/KeywordTagInput";
 import TemplateChatEditor from "../components/TemplateChatEditor";
@@ -7,7 +8,7 @@ import { articleService } from "../services/articleService";
 import { keywordService } from "../services/keywordService";
 import { useToast } from "../hooks/useToast";
 import { ARTICLE_ROUTES } from "../lib/articleConstants";
-import { buildArticleSavePayload } from "../lib/articleUtils";
+import { buildArticleSavePayload, getArticleId } from "../lib/articleUtils";
 import { htmlToPlainText } from "../lib/htmlUtils";
 
 const DEFAULT_CATATAN = "Tidak ada catatan pada template ini";
@@ -67,6 +68,8 @@ export default function AdminSOPPage() {
   const [formData, setFormData] = useState(createEmptyFormData);
   const [navigationPreference, setNavigationPreference] = useState(getStoredNavigationPreference);
 
+  const [createdSopData, setCreatedSopData] = useState(null);
+  const [createdSopId, setCreatedSopId] = useState("");
   const [showVariableMenu, setShowVariableMenu] = useState({});
   const [isSavingKeyword, setIsSavingKeyword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -202,27 +205,8 @@ export default function AdminSOPPage() {
     return true;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      setIsSaving(false);
-      return;
-    }
-
-    setIsSaving(true);
-
-    let savedKeywords;
-
-    try {
-      savedKeywords = await keywordService.persistKeywords(formData.keyword);
-    } catch (error) {
-      setIsSaving(false);
-      showToast(error?.message || "Gagal menyimpan keyword.", "error");
-      return;
-    }
-
-    const payload = buildArticleSavePayload({
+  const buildCurrentPayload = (savedKeywords) =>
+    buildArticleSavePayload({
       title: formData.title,
       content: formData.title,
       keywords: savedKeywords,
@@ -238,11 +222,67 @@ export default function AdminSOPPage() {
       },
     });
 
+  const saveCurrentSop = async ({ resetAfterSave = false } = {}) => {
+    const savedKeywords = await keywordService.persistKeywords(formData.keyword);
+    const payload = buildCurrentPayload(savedKeywords);
+
+    const savedArticle = await articleService.createArticle(payload);
+    const savedSopId = getArticleId(savedArticle);
+
+    if (savedSopId) {
+      setCreatedSopData(savedArticle);
+      setCreatedSopId(savedSopId);
+    }
+
+    if (resetAfterSave) {
+      setFormData(createEmptyFormData());
+      setCreatedSopData(null);
+      setCreatedSopId("");
+    }
+
+    return {
+      article: savedArticle,
+      sopId: savedSopId,
+    };
+  };
+
+  const handleEnsureSopIdForRuleDraft = async () => {
+    if (createdSopId) {
+      return {
+        article: createdSopData,
+        sopId: createdSopId,
+      };
+    }
+
+    if (!validateForm()) return "";
+
     try {
-      await articleService.createArticle(payload);
+      setIsSaving(true);
+      const savedSop = await saveCurrentSop();
+      showToast("SOP berhasil disimpan untuk draft rule.", "success");
+      return savedSop;
+    } catch (error) {
+      showToast(error?.message || "Gagal menyimpan SOP sebelum generate rule.", "error");
+      return "";
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      setIsSaving(false);
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      await saveCurrentSop({ resetAfterSave: true });
       saveNavigationPreference(navigationPreference);
       showToast("SOP berhasil disimpan!", "success");
-      setFormData(createEmptyFormData());
 
       if (navigationPreference === NAVIGATION_PREFERENCES.home) {
         window.setTimeout(() => {
@@ -520,14 +560,39 @@ export default function AdminSOPPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3">
+          {createdSopId && (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100">
+              SOP sudah tersimpan untuk generate rule. ID: {createdSopId}
+            </div>
+          )}
+
+          <div className="flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
-              onClick={() => setFormData(createEmptyFormData())}
+              onClick={() => {
+                setFormData(createEmptyFormData());
+                setCreatedSopData(null);
+                setCreatedSopId("");
+              }}
               className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               Reset
             </button>
+            <GenerateRuleDraftButton
+              disabled={isSaving || isSavingKeyword}
+              onEnsureSopId={handleEnsureSopIdForRuleDraft}
+              promptContext={{
+                details: {
+                  Catatan: formData.catatan,
+                  JenisLog: formData.jenisLog,
+                  Kondisi: formData.kondisi,
+                  Penanganan: formData.penanganan,
+                },
+                keyword: formData.keyword,
+                title: formData.title,
+              }}
+              className="flex-1"
+            />
             <button
               type="submit"
               disabled={isSaving || isSavingKeyword}
