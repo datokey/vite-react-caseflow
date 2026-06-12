@@ -228,7 +228,7 @@ const Navbar = () => {
   if (loading) {
     return (
       <nav className="sticky top-0 z-50 h-16 border-b border-slate-200 bg-white/95 px-4 text-sm text-slate-500 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/90 dark:text-slate-400">
-        <div className="mx-auto flex h-full max-w-7xl items-center justify-between">
+        <div className="flex h-full w-full items-center justify-between">
           <span>Memuat status...</span>
           <div className="flex items-center gap-2">
             <ScreenWakeLockButton />
@@ -252,11 +252,11 @@ const Navbar = () => {
   return (
     <>
       <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/90">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <Link
             to="/"
             onClick={closeMenus}
-            className="inline-flex items-center gap-2 text-xl font-black text-indigo-600 dark:text-indigo-300"
+            className="inline-flex items-center gap-2 text-xl font-black text-indigo-600 dark:text-indigo-300 md:flex-1"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 shadow-lg shadow-indigo-500/25 dark:bg-indigo-500 dark:shadow-indigo-900/40">
         <TiFlowChildren className="h-5 w-5 text-white" />
@@ -325,7 +325,7 @@ const Navbar = () => {
             )}
           </div>
 
-          <div className="hidden items-center gap-2 md:flex">
+          <div className="hidden items-center gap-2 md:flex md:flex-1 md:justify-end">
             <ScreenWakeLockButton />
 
             <button
