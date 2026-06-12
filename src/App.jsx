@@ -262,12 +262,12 @@ const getLogTypeAccentColor = (article) => {
   return LOG_TYPE_ACCENT_COLOR_MAP[typeKey] || LOG_TYPE_ACCENT_COLOR_MAP.other;
 };
 
-const getCategory = (article) =>
+const getCategory = (article) => 
   toText(
-    getFirstValue(article?.details, ["JenisLog", "jenisLog", "kategori", "Kategori"]) ||
-      article?.category ||
-      article?.kategori,
-  ) || "SOP Operasional";
+    getFirstValue(article?.details, ["JenisLog", "jenisLog", "logType"]) ||
+      article?.jenisLog ||
+      article?.logType,
+  ) || "Other";
 
 const getConditions = (article) =>
   toTextList(
@@ -722,6 +722,7 @@ function SopPreviewCard({ article, isPopular = false, isSelected, onSelect, sear
             <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{category}</p>
             <h2 className="mt-2 line-clamp-2 text-base font-bold leading-snug text-slate-950 dark:text-white">
               <HighlightedText text={article?.title || "Tanpa judul SOP"} query={searchQuery} />
+            
             </h2>
           </div>
           {isPopular && (
@@ -1529,6 +1530,33 @@ const RECORDING_CHANNELS = [
   { key: "x", label: "X", icon: "x", colorClass: "bg-slate-950" },
   { key: "call", label: "Call", icon: "call", colorClass: "bg-teal-600" },
 ];
+const FLOATING_DRAWER_ACTIVE_CHANNEL_STORAGE_KEY = "floatingDrawerActiveChannel";
+
+const isValidRecordingChannelKey = (channelKey) =>
+  RECORDING_CHANNELS.some((channel) => channel.key === channelKey);
+
+const getStoredActiveChannelKey = () => {
+  if (typeof window === "undefined") return RECORDING_CHANNELS[0].key;
+
+  try {
+    const storedChannelKey = window.localStorage.getItem(FLOATING_DRAWER_ACTIVE_CHANNEL_STORAGE_KEY);
+    return isValidRecordingChannelKey(storedChannelKey)
+      ? storedChannelKey
+      : RECORDING_CHANNELS[0].key;
+  } catch {
+    return RECORDING_CHANNELS[0].key;
+  }
+};
+
+const saveActiveChannelKey = (channelKey) => {
+  if (typeof window === "undefined" || !isValidRecordingChannelKey(channelKey)) return;
+
+  try {
+    window.localStorage.setItem(FLOATING_DRAWER_ACTIVE_CHANNEL_STORAGE_KEY, channelKey);
+  } catch {
+    // Jika storage browser dibatasi, drawer tetap bisa dipakai di sesi saat ini.
+  }
+};
 
 const createEmptyRecordingCounters = () =>
   RECORDING_CHANNELS.reduce((counters, channel) => {
@@ -1626,7 +1654,7 @@ function RecordingChannelIcon({ channel, className = "h-4 w-4" }) {
 
 function FloatingDrawerCounter() {
   const { showToast } = useToast();
-  const [activeChannelKey, setActiveChannelKey] = useState(RECORDING_CHANNELS[0].key);
+  const [activeChannelKey, setActiveChannelKey] = useState(getStoredActiveChannelKey);
   const [counters, setCounters] = useState(createEmptyRecordingCounters);
   const [isLoadingCounters, setIsLoadingCounters] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -1635,6 +1663,17 @@ function FloatingDrawerCounter() {
   const activeChannel =
     RECORDING_CHANNELS.find((channel) => channel.key === activeChannelKey) || RECORDING_CHANNELS[0];
   const activeCounter = counters[activeChannel.key] || 0;
+
+  const selectActiveChannel = useCallback((channelKey) => {
+    if (!isValidRecordingChannelKey(channelKey)) return;
+
+    setActiveChannelKey(channelKey);
+    saveActiveChannelKey(channelKey);
+  }, []);
+
+  useEffect(() => {
+    saveActiveChannelKey(activeChannel.key);
+  }, [activeChannel.key]);
 
   useEffect(() => {
     let isActive = true;
@@ -1669,6 +1708,8 @@ function FloatingDrawerCounter() {
   }, [showToast]);
 
   const updateChannelCounter = async (channelKey, action) => {
+    selectActiveChannel(channelKey);
+
     const currentValue = counters[channelKey] || 0;
     const optimisticValue =
       action === "increment" ? currentValue + 1 : Math.max(0, currentValue - 1);
@@ -1757,7 +1798,7 @@ function FloatingDrawerCounter() {
               >
                 <button
                   type="button"
-                  onClick={() => setActiveChannelKey(channel.key)}
+                  onClick={() => selectActiveChannel(channel.key)}
                   className="flex min-w-0 flex-1 items-center gap-2 text-left"
                 >
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-black text-white dark:bg-slate-700">
