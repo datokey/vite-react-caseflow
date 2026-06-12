@@ -493,6 +493,258 @@ body {
   background: #0f172a;
 }
 
+.tiny-rich-text-editor .tox.tox-tinymce {
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.tiny-rich-text-editor .tox .tox-editor-header {
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: none;
+}
+
+.tiny-rich-text-editor .tox .tox-toolbar-overlord,
+.tiny-rich-text-editor .tox .tox-toolbar,
+.tiny-rich-text-editor .tox .tox-toolbar__primary {
+  background: #f8fafc;
+}
+
+.tiny-rich-text-editor .tox .tox-edit-area {
+  background: #ffffff !important;
+}
+
+.tiny-rich-text-editor .tox .tox-edit-area__iframe {
+  background: #ffffff !important;
+}
+
+.tiny-rich-text-editor .tox .tox-tbtn {
+  border-radius: 0.375rem;
+  color: #475569;
+}
+
+.tiny-rich-text-editor .tox .tox-tbtn svg {
+  fill: currentColor;
+}
+
+.tiny-rich-text-editor .tox .tox-tbtn:hover,
+.tiny-rich-text-editor .tox .tox-tbtn:focus,
+.tiny-rich-text-editor .tox .tox-split-button:hover,
+.tiny-rich-text-editor .tox .tox-split-button:focus {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.tiny-rich-text-editor .tox .tox-tbtn--enabled,
+.tiny-rich-text-editor .tox .tox-tbtn--enabled:hover,
+.tiny-rich-text-editor .tox .tox-split-button:has(.tox-tbtn--enabled) {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.tiny-rich-text-editor .tox .tox-tbtn--disabled,
+.tiny-rich-text-editor .tox .tox-tbtn--disabled:hover {
+  color: #94a3b8;
+}
+
+.tiny-rich-text-editor .tox .tox-toolbar__group {
+  border-color: #e2e8f0;
+}
+
+:root.dark .tiny-rich-text-editor .tox.tox-tinymce {
+  border-color: #334155;
+  background: #020617;
+  color: #cbd5e1;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-editor-header {
+  border-bottom-color: #334155;
+  background: #0f172a;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-toolbar-overlord,
+:root.dark .tiny-rich-text-editor .tox .tox-toolbar,
+:root.dark .tiny-rich-text-editor .tox .tox-toolbar__primary {
+  background: #0f172a;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-toolbar__group {
+  border-color: #1e293b;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-edit-area {
+  background: #020617 !important;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-edit-area__iframe {
+  background: #020617 !important;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn,
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn--select,
+:root.dark .tiny-rich-text-editor .tox .tox-toolbar-label {
+  color: #cbd5e1;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn svg,
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn--select svg {
+  fill: currentColor;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn:hover,
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn:focus,
+:root.dark .tiny-rich-text-editor .tox .tox-split-button:hover,
+:root.dark .tiny-rich-text-editor .tox .tox-split-button:focus {
+  background: #1e293b;
+  color: #f8fafc;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn--enabled,
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn--enabled:hover,
+:root.dark .tiny-rich-text-editor .tox .tox-split-button:has(.tox-tbtn--enabled) {
+  background: rgba(99, 102, 241, 0.22);
+  color: #c7d2fe;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn--disabled,
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn--disabled:hover {
+  background: transparent;
+  color: #475569;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-split-button {
+  border-color: #334155;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn__select-chevron svg {
+  fill: #94a3b8;
+}
+
+:root.dark .tox.tox-tinymce-aux .tox-menu,
+:root.dark .tox.tox-tinymce-aux .tox-collection,
+:root.dark .tox.tox-tinymce-aux .tox-swatches,
+:root.dark .tox.tox-tinymce-aux .tox-pop__dialog {
+  border-color: #334155;
+  background: #0f172a;
+  color: #cbd5e1;
+}
+
+:root.dark .tox.tox-tinymce-aux .tox-collection__item {
+  color: #cbd5e1;
+}
+
+:root.dark .tox.tox-tinymce-aux .tox-collection__item:hover,
+:root.dark .tox.tox-tinymce-aux .tox-collection__item--active,
+:root.dark .tox.tox-tinymce-aux .tox-collection__item--enabled {
+  background: #1e293b;
+  color: #f8fafc;
+}
+
+:root.dark .tox.tox-tinymce-aux .tox-collection__item-icon svg,
+:root.dark .tox.tox-tinymce-aux .tox-collection__item-caret svg {
+  fill: currentColor;
+}
+
+:root.dark .tox.tox-tinymce-aux .tox-collection__group {
+  border-color: #1e293b;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-editor-header,
+:root.dark .tiny-rich-text-editor .tox .tox-toolbar-overlord,
+:root.dark .tiny-rich-text-editor .tox .tox-toolbar,
+:root.dark .tiny-rich-text-editor .tox .tox-toolbar__primary,
+:root.dark .tiny-rich-text-editor .tox .tox-toolbar__overflow {
+  background: #0f172a !important;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn,
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn--select,
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn--bespoke,
+:root.dark .tiny-rich-text-editor .tox .tox-split-button,
+:root.dark .tiny-rich-text-editor .tox .tox-toolbar-label {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: #cbd5e1 !important;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn:hover,
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn:focus,
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn--select:hover,
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn--select:focus,
+:root.dark .tiny-rich-text-editor .tox .tox-split-button:hover,
+:root.dark .tiny-rich-text-editor .tox .tox-split-button:focus,
+:root.dark .tiny-rich-text-editor .tox .tox-split-button:hover .tox-tbtn,
+:root.dark .tiny-rich-text-editor .tox .tox-split-button:focus .tox-tbtn {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn--enabled,
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn--enabled:hover,
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn--enabled:focus,
+:root.dark .tiny-rich-text-editor .tox .tox-split-button:has(.tox-tbtn--enabled),
+:root.dark .tiny-rich-text-editor .tox .tox-split-button:has(.tox-tbtn--enabled) .tox-tbtn {
+  background: rgba(99, 102, 241, 0.25) !important;
+  border-color: rgba(129, 140, 248, 0.45) !important;
+  color: #c7d2fe !important;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn--disabled,
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn--disabled:hover,
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn--disabled:focus {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #475569 !important;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn svg,
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn svg path,
+:root.dark .tiny-rich-text-editor .tox .tox-icon svg,
+:root.dark .tiny-rich-text-editor .tox .tox-icon svg path,
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn__select-chevron svg,
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn__select-chevron svg path {
+  fill: currentColor !important;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-tbtn__select-label {
+  color: currentColor !important;
+}
+
+:root.dark .tiny-rich-text-editor .tox .tox-toolbar__group {
+  border-color: #1e293b !important;
+}
+
+:root.dark .tox.tox-tinymce-aux,
+:root.dark .tox.tox-tinymce-aux .tox-menu,
+:root.dark .tox.tox-tinymce-aux .tox-collection,
+:root.dark .tox.tox-tinymce-aux .tox-swatches,
+:root.dark .tox.tox-tinymce-aux .tox-pop__dialog {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+:root.dark .tox.tox-tinymce-aux .tox-collection__item {
+  background: transparent !important;
+  color: #cbd5e1 !important;
+}
+
+:root.dark .tox.tox-tinymce-aux .tox-collection__item:hover,
+:root.dark .tox.tox-tinymce-aux .tox-collection__item--active,
+:root.dark .tox.tox-tinymce-aux .tox-collection__item--enabled {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+:root.dark .tox.tox-tinymce-aux .tox-collection__item-icon svg,
+:root.dark .tox.tox-tinymce-aux .tox-collection__item-icon svg path,
+:root.dark .tox.tox-tinymce-aux .tox-collection__item-caret svg,
+:root.dark .tox.tox-tinymce-aux .tox-collection__item-caret svg path {
+  fill: currentColor !important;
+}
+
 
 /* =========================================================
    FIX React Quill list rendering

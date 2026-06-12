@@ -10,6 +10,7 @@ import {
   normalizeHandlingStepForForm,
 } from "./handlingItems";
 import { normalizeKeyword, toKeywordPayload } from "./keywordUtils";
+import { stripEmbeddedDataImages } from "./payloadSanitizer";
 
 export const getArticleId = (article) => article?._id || article?.id;
 
@@ -62,14 +63,14 @@ const normalizeTextLines = (value) => {
   return [];
 };
 
-const getJenisLogValue = (article = {}) =>
-  article.jenisLog ?? article.details?.JenisLog ?? article.details?.jenisLog ?? "";
+const getJenisLogValue = (article) =>
+  article?.jenisLog ?? article?.details?.JenisLog ?? article?.details?.jenisLog ?? "";
 
-const getConditionsValue = (article = {}) =>
-  article.conditions ?? article.details?.Kondisi ?? article.details?.conditions ?? "";
+const getConditionsValue = (article) =>
+  article?.conditions ?? article?.details?.Kondisi ?? article?.details?.conditions ?? "";
 
-const getHandlingValue = (article = {}) =>
-  article.contentBlocks ?? article.details?.Penanganan ?? article.details?.penanganan;
+const getHandlingValue = (article) =>
+  article?.contentBlocks ?? article?.details?.Penanganan ?? article?.details?.penanganan;
 
 const sortByOrder = (items = []) =>
   [...items].sort((firstItem, secondItem) => {
@@ -111,8 +112,8 @@ const mapHandlingToForm = (penanganan) => {
   return [createEmptyHandlingStep()];
 };
 
-const getCatatanValue = (details = {}) =>
-  details.Catatan ?? details.catatan ?? details.Notes ?? details.notes;
+const getCatatanValue = (details) =>
+  details?.Catatan ?? details?.catatan ?? details?.Notes ?? details?.notes;
 
 const getArticleCatatanValue = (article) =>
   article?.catatan ?? article?.Catatan ?? getCatatanValue(article?.details);
@@ -145,29 +146,49 @@ export const mapArticleKeywords = (article) => {
   );
 };
 
-export const mapArticleToForm = (article) => ({
-  ...EMPTY_ARTICLE_FORM,
-  title: article?.title || "",
-  content: article?.content || "",
-  keywords: mapArticleKeywords(article),
-  details: {
-    JenisLog: getJenisLogValue(article),
-    Kondisi: Array.isArray(getConditionsValue(article))
-      ? getConditionsValue(article).join("\n")
-      : getConditionsValue(article),
-    Catatan: getArticleCatatanValue(article) || "Tidak ada catatan pada template ini",
-    Penanganan: mapHandlingToForm(getHandlingValue(article)),
-  },
-});
+export const mapArticleToForm = (article) => {
+  const conditions = getConditionsValue(article);
+
+  return {
+    ...EMPTY_ARTICLE_FORM,
+    title: article?.title || "",
+    content: article?.content || "",
+    keywords: mapArticleKeywords(article),
+    details: {
+      JenisLog: getJenisLogValue(article),
+      Kondisi: Array.isArray(conditions) ? conditions.join("\n") : conditions,
+      Catatan: getArticleCatatanValue(article) || "Tidak ada catatan pada template ini",
+      Penanganan: mapHandlingToForm(getHandlingValue(article)),
+    },
+  };
+};
 
 export const buildArticleSavePayload = (formData) => {
-  const penanganan = formData.details?.Penanganan;
-  const catatan = getCatatanValue(formData.details) || "Tidak ada catatan pada template ini";
-  const jenisLog = formData.details?.JenisLog || "";
-  const conditions = normalizeTextLines(formData.details?.Kondisi);
+  const details = formData?.details || {};
+  const penanganan = details.Penanganan;
+  const catatan = getCatatanValue(details) || "Tidak ada catatan pada template ini";
+  const jenisLog = details.JenisLog || "";
+  const conditions = normalizeTextLines(details.Kondisi);
 
+  const sanitizeHandlingStepPayload = (step) => ({
+    ...step,
+    instruksiInternal: Array.isArray(step.instruksiInternal)
+      ? step.instruksiInternal.map(stripEmbeddedDataImages)
+      : [],
+    templateChat: stripEmbeddedDataImages(step.templateChat || ""),
+    catatan: Array.isArray(step.catatan)
+      ? step.catatan.map(stripEmbeddedDataImages)
+      : [],
+    items: Array.isArray(step.items)
+      ? step.items.map((item) => ({
+          ...item,
+          content: stripEmbeddedDataImages(item.content || ""),
+        }))
+      : [],
+  });
   const penangananArray = mapHandlingToForm(penanganan)
     .map(buildHandlingStepPayload)
+    .map(sanitizeHandlingStepPayload)
     .filter(
       (step) =>
         step.judulPenanganan ||
@@ -182,26 +203,27 @@ export const buildArticleSavePayload = (formData) => {
     items: step.items.map((item, itemIndex) => ({
       type: item.type,
       title: item.title || "",
-      content: item.content,
+      content: stripEmbeddedDataImages(item.content),
       order: itemIndex,
     })),
   }));
+  const safeCatatan = stripEmbeddedDataImages(catatan);
 
   return {
-    title: formData.title,
+    title: formData?.title || "",
     jenisLog,
     conditions,
     contentBlocks,
-    keyword: formData.keywords.map(toKeywordPayload),
+    keyword: (formData?.keywords || []).map(toKeywordPayload),
 
     // Field lama tetap dikirim untuk kompatibilitas controller/response lama.
-    content: formData.content?.trim() || formData.title?.trim() || "",
-    catatan,
+    content: stripEmbeddedDataImages(formData?.content?.trim() || formData?.title?.trim() || ""),
+    catatan: safeCatatan,
     details: {
       JenisLog: jenisLog,
       Kondisi: conditions,
-      catatan,
-      Catatan: catatan,
+      catatan: safeCatatan,
+      Catatan: safeCatatan,
       Penanganan: penangananArray,
     },
   };

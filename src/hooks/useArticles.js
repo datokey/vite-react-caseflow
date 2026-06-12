@@ -1,12 +1,13 @@
-import {useQuery} from '@tanstack/react-query'
-import { articleService } from '../services/articleService';
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "../lib/queryKeys";
+import { articleService } from "../services/articleService";
 
 export const useArticles = (params = {}) => {
     const { enabled = true, search, ...rest } = params;
 
     const {data, isLoading, isError, error} = useQuery({
         // Query key dinamis : jika paramater berubah ( misal pindah halaman ), React Query otomatis fetch ulang
-        queryKey: ["articles", { search, ...rest }],
+        queryKey: queryKeys.articles.list({ search, ...rest }),
 
         // Memanggil fungsi dari service yang dibuat sebelumnya
         queryFn: () => {
@@ -16,10 +17,8 @@ export const useArticles = (params = {}) => {
             return articleService.getArticles(rest);
         },
 
-        // Opsi tambahan : cache selama 5 menit, tidak refetch saat window focus
+        // Stale time dan refetch policy mengikuti default QueryClient.
         enabled,
-        staleTime: 5 * 60 * 1000, // 5 menit
-        refetchOnWindowFocus: false,
     });
 
     return {

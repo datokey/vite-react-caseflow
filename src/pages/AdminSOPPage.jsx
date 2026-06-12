@@ -12,6 +12,7 @@ import { ARTICLE_ROUTES } from "../lib/articleConstants";
 import { buildArticleSavePayload, getArticleId } from "../lib/articleUtils";
 import { createEmptyHandlingStep, hasHandlingItemContent } from "../lib/handlingItems";
 import { htmlToPlainText } from "../lib/htmlUtils";
+import { stripEmbeddedDataImages } from "../lib/payloadSanitizer";
 
 const DEFAULT_CATATAN = "Tidak ada catatan pada template ini";
 const CREATE_SOP_DRAFT_KEY = "admin-sop-create-draft";
@@ -60,6 +61,26 @@ const createEmptyFormData = () => ({
   penanganan: [createEmptyHandlingStep()],
 });
 
+const sanitizePenangananDraft = (penanganan = []) =>
+  (Array.isArray(penanganan) ? penanganan : []).map((step) => ({
+    ...step,
+    instruksiInternal: stripEmbeddedDataImages(step?.instruksiInternal || ""),
+    templateChat: stripEmbeddedDataImages(step?.templateChat || ""),
+    catatan: stripEmbeddedDataImages(step?.catatan || ""),
+    items: Array.isArray(step?.items)
+      ? step.items.map((item) => ({
+          ...item,
+          content: stripEmbeddedDataImages(item?.content || ""),
+        }))
+      : [],
+  }));
+
+const sanitizeFormData = (formData) => ({
+  ...formData,
+  catatan: stripEmbeddedDataImages(formData.catatan || ""),
+  penanganan: sanitizePenangananDraft(formData.penanganan),
+});
+
 const getInitialFormData = () => {
   if (typeof window === "undefined") return createEmptyFormData();
 
@@ -69,14 +90,14 @@ const getInitialFormData = () => {
 
     if (!parsedDraft || typeof parsedDraft !== "object") return createEmptyFormData();
 
-    return {
+    return sanitizeFormData({
       ...createEmptyFormData(),
       ...parsedDraft,
       keyword: Array.isArray(parsedDraft.keyword) ? parsedDraft.keyword : [],
       penanganan: Array.isArray(parsedDraft.penanganan) && parsedDraft.penanganan.length
         ? parsedDraft.penanganan
         : [createEmptyHandlingStep()],
-    };
+    });
   } catch {
     return createEmptyFormData();
   }
@@ -137,7 +158,7 @@ export default function AdminSOPPage() {
   const handleFieldChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
-      [field]: value,
+      [field]: stripEmbeddedDataImages(value),
     }));
   };
 
@@ -181,7 +202,7 @@ export default function AdminSOPPage() {
   const handlePenangananBuilderChange = (penanganan) => {
     setFormData((prev) => ({
       ...prev,
-      penanganan,
+      penanganan: sanitizePenangananDraft(penanganan),
     }));
   };
 
@@ -434,8 +455,7 @@ export default function AdminSOPPage() {
                 onChange={(value) => handleFieldChange("catatan", value)}
                 placeholder={DEFAULT_CATATAN}
                 label="Catatan Template"
-                defaultMaxDepth={3}
-                helperText="Gunakan list dan tombol indent/outdent untuk membuat catatan bertingkat hingga 3 level."
+                helperText="Bisa copy-paste dari dokumen lain tanpa perlu merapikan ulang format."
               />
             </div>
           </div>

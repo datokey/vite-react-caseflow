@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "./useToast";
 import { ARTICLE_MESSAGES, ARTICLE_ROUTES } from "../lib/articleConstants";
@@ -6,6 +7,7 @@ import {
   buildArticleSavePayload,
   mapArticleToForm,
 } from "../lib/articleUtils";
+import { queryKeys } from "../lib/queryKeys";
 import { articleService } from "../services/articleService";
 import { keywordService } from "../services/keywordService";
 
@@ -32,90 +34,117 @@ const removeStoredEditDraft = (id) => {
 
 export const useEditArticle = (id) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState(() => mapArticleToForm(null));
   const [isSaving, setIsSaving] = useState(false);
   const [hasLoadedArticle, setHasLoadedArticle] = useState(false);
+  const [loadedArticleId, setLoadedArticleId] = useState("");
 
   const goToHome = useCallback(() => {
     navigate(ARTICLE_ROUTES.home);
   }, [navigate]);
 
+  const articleQuery = useQuery({
+    queryKey: queryKeys.articles.detail(id),
+    queryFn: () => articleService.getArticleById(id),
+    enabled: Boolean(id),
+  });
+
   useEffect(() => {
     let isActive = true;
 
-    const loadArticle = async () => {
+    const hydrateArticleForm = async () => {
+      await Promise.resolve();
+
+      if (!isActive) return;
+
       if (!id) {
         setError(ARTICLE_MESSAGES.missingId);
         setLoading(false);
+        setHasLoadedArticle(false);
+        setLoadedArticleId("");
         showToast(ARTICLE_MESSAGES.missingId, "error");
         return;
       }
 
-      try {
-        setLoading(true);
+      if (articleQuery.isLoading) {
         setError(null);
+        setLoading(true);
         setHasLoadedArticle(false);
-
-        // Detail artikel dinormalisasi di helper agar struktur response backend tidak bocor ke UI.
-        const article = await articleService.getArticleById(id);
-
-        if (!isActive) return;
-
-        if (!article) {
-          setError(ARTICLE_MESSAGES.notFound);
-          showToast(ARTICLE_MESSAGES.notFound, "error");
-          return;
-        }
-
-        const articleForm = mapArticleToForm(article);
-        const editDraft = getStoredEditDraft(id);
-
-        setFormData(
-          editDraft && typeof editDraft === "object"
-            ? {
-                ...articleForm,
-                ...editDraft,
-                keywords: Array.isArray(editDraft.keywords) ? editDraft.keywords : articleForm.keywords,
-                details: {
-                  ...articleForm.details,
-                  ...(editDraft.details || {}),
-                },
-              }
-            : articleForm,
-        );
-        setHasLoadedArticle(true);
-      } catch (err) {
-        if (!isActive) return;
-
-        const message = err?.message || ARTICLE_MESSAGES.loadFailed;
-        setError(message);
-        showToast(message, "error");
-      } finally {
-        if (isActive) {
-          setLoading(false);
-        }
+        setLoadedArticleId("");
+        return;
       }
+
+      if (articleQuery.isError) {
+        const message = articleQuery.error?.message || ARTICLE_MESSAGES.loadFailed;
+        setError(message);
+        setLoading(false);
+        setHasLoadedArticle(false);
+        setLoadedArticleId("");
+        showToast(message, "error");
+        return;
+      }
+
+      if (articleQuery.data === undefined) return;
+
+      // Detail artikel dinormalisasi di helper agar struktur response backend tidak bocor ke UI.
+      if (!articleQuery.data) {
+        setError(ARTICLE_MESSAGES.notFound);
+        setLoading(false);
+        setHasLoadedArticle(false);
+        setLoadedArticleId("");
+        showToast(ARTICLE_MESSAGES.notFound, "error");
+        return;
+      }
+
+      const articleForm = mapArticleToForm(articleQuery.data);
+      const editDraft = getStoredEditDraft(id);
+
+      setFormData(
+        editDraft && typeof editDraft === "object"
+          ? {
+              ...articleForm,
+              ...editDraft,
+              keywords: Array.isArray(editDraft.keywords) ? editDraft.keywords : articleForm.keywords,
+              details: {
+                ...articleForm.details,
+                ...(editDraft.details || {}),
+              },
+            }
+          : articleForm,
+      );
+      setError(null);
+      setHasLoadedArticle(true);
+      setLoadedArticleId(id);
+      setLoading(false);
     };
 
-    loadArticle();
+    hydrateArticleForm();
 
     return () => {
       isActive = false;
     };
-  }, [id, showToast]);
+  }, [
+    articleQuery.data,
+    articleQuery.error,
+    articleQuery.isError,
+    articleQuery.isLoading,
+    id,
+    showToast,
+  ]);
 
   useEffect(() => {
-    if (!hasLoadedArticle || !id || loading || error) return undefined;
+    if (!hasLoadedArticle || loadedArticleId !== id || !id || loading || error) return undefined;
 
     const timerId = window.setTimeout(() => {
       window.localStorage.setItem(getEditDraftKey(id), JSON.stringify(formData));
     }, AUTOSAVE_DELAY_MS);
 
     return () => window.clearTimeout(timerId);
-  }, [error, formData, hasLoadedArticle, id, loading]);
+  }, [error, formData, hasLoadedArticle, id, loadedArticleId, loading]);
 
   const handleInputChange = useCallback((event) => {
     const { name, value } = event.target;
@@ -215,6 +244,10 @@ export const useEditArticle = (id) => {
 
         // Payload artikel disiapkan setelah keyword baru dipastikan tersimpan di database.
         await articleService.saveArticleChanges(id, articlePayload);
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: queryKeys.articles.lists() }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.articles.detail(id) }),
+        ]);
         removeStoredEditDraft(id);
         showToast(ARTICLE_MESSAGES.saveSuccess, "success");
         goToHome();
@@ -226,7 +259,7 @@ export const useEditArticle = (id) => {
         setIsSaving(false);
       }
     },
-    [formData, goToHome, id, showToast],
+    [formData, goToHome, id, queryClient, showToast],
   );
 
   return {

@@ -7,6 +7,7 @@ const API_ORIGIN = import.meta.env.DEV
 const isAbsoluteUrl = (url) => /^https?:\/\//i.test(url);
 
 const STATUS_ERROR_MESSAGES = {
+  413: "Konten SOP terlalu besar untuk dikirim. Hapus gambar yang ikut ter-copy dari dokumen, lalu coba simpan lagi.",
   502: "Server sedang tidak bisa menjangkau layanan backend/AI. Coba lagi beberapa saat lagi atau pastikan service backend dan Qwen aktif.",
   503: "Server sedang tidak tersedia. Coba lagi beberapa saat lagi.",
   504: "Request terlalu lama diproses oleh server. Coba lagi atau cek proses backend yang berjalan.",

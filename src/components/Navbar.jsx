@@ -4,6 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
 import { useToast } from "../hooks/useToast";
 import AuthModal from "./AuthModal.jsx";
+import ScreenWakeLockButton from "./ScreenWakeLockButton.jsx";
 import { TiFlowChildren } from "react-icons/ti";
 
 const PRIMARY_LINKS = [
@@ -229,17 +230,20 @@ const Navbar = () => {
       <nav className="sticky top-0 z-50 h-16 border-b border-slate-200 bg-white/95 px-4 text-sm text-slate-500 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/90 dark:text-slate-400">
         <div className="mx-auto flex h-full max-w-7xl items-center justify-between">
           <span>Memuat status...</span>
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label={
-              isDarkMode ? "Aktifkan light mode" : "Aktifkan dark mode"
-            }
-            data-testid="theme-toggle-loading"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
-          >
-            {isDarkMode ? <SunIcon /> : <MoonIcon />}
-          </button>
+          <div className="flex items-center gap-2">
+            <ScreenWakeLockButton />
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={
+                isDarkMode ? "Aktifkan light mode" : "Aktifkan dark mode"
+              }
+              data-testid="theme-toggle-loading"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
+            >
+              {isDarkMode ? <SunIcon /> : <MoonIcon />}
+            </button>
+          </div>
         </div>
       </nav>
     );
@@ -322,6 +326,8 @@ const Navbar = () => {
           </div>
 
           <div className="hidden items-center gap-2 md:flex">
+            <ScreenWakeLockButton />
+
             <button
               type="button"
               onClick={toggleTheme}
@@ -365,15 +371,18 @@ const Navbar = () => {
             )}
           </div>
 
-          <button
-            type="button"
-            aria-label="Toggle navigation menu"
-            aria-expanded={isMobileOpen}
-            onClick={() => setIsMobileOpen((currentValue) => !currentValue)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 md:hidden dark:text-slate-200 dark:hover:bg-slate-800"
-          >
-            <MenuIcon isOpen={isMobileOpen} />
-          </button>
+          <div className="flex items-center gap-2 md:hidden">
+            <ScreenWakeLockButton />
+            <button
+              type="button"
+              aria-label="Toggle navigation menu"
+              aria-expanded={isMobileOpen}
+              onClick={() => setIsMobileOpen((currentValue) => !currentValue)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              <MenuIcon isOpen={isMobileOpen} />
+            </button>
+          </div>
         </div>
 
         <div

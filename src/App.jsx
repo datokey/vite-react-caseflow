@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  LuArrowUp,
+  LuCircleHelp,
+  LuClipboard,
+  LuFileText,
+  LuMessageSquare,
+  LuPencil,
+  LuShield,
+  LuWorkflow,
+} from "react-icons/lu";
 import AuthModal from "./components/AuthModal";
 import DecisionAssistantMode from "./components/DecisionAssistantMode";
 import Navbar from "./components/Navbar"; 
@@ -22,6 +32,7 @@ import {
   normalizeHandlingItemType,
 } from "./lib/handlingItems";
 import { escapeRegExp, hasHtmlMarkup, htmlToPlainText } from "./lib/htmlUtils";
+import { queryKeys } from "./lib/queryKeys";
 import { articleService } from "./services/articleService";
 import { authService } from "./services/authService";
 import { recordingService } from "./services/recordingService";
@@ -35,6 +46,8 @@ const SEARCH_HIGHLIGHT_PULSE_CLASS = "sop-search-highlight-pulse";
 const SEARCH_HIGHLIGHT_CLASS =
   `${SEARCH_HIGHLIGHT_MARK_CLASS} rounded bg-amber-200/80 px-0.5 text-slate-950 ring-1 ring-amber-300/70 dark:bg-sky-400/30 dark:text-sky-50 dark:ring-sky-300/30`;
 const LAST_SELECTED_SOP_STORAGE_KEY = "lastSelectedSopId";
+const SCROLL_TO_TOP_THRESHOLD = 360;
+const SCROLL_TOP_CONTAINER_SELECTOR = "[data-scroll-top-container]";
 const TEMPLATE_NAME_PATTERN =
   /\{\{\s*(nama|nama_pelanggan|namaPelanggan|customerName|customer_name|pelanggan)\s*\}\}|\{\s*(nama|nama_pelanggan|namaPelanggan|customerName|customer_name|pelanggan)\s*\}|\[\s*(nama|nama pelanggan|customer name|customerName|customer_name|pelanggan)\s*\]|<<\s*(nama|nama pelanggan|customer name|customerName|customer_name|pelanggan)\s*>>/gi;
 const TEMPLATE_GREETING_PATTERN =
@@ -597,6 +610,76 @@ const isElementInViewport = (element) => {
   return rect.top >= 0 && rect.left >= 0 && rect.bottom <= viewportHeight && rect.right <= viewportWidth;
 };
 
+const getScrollTopContainers = () => {
+  if (typeof document === "undefined") return [];
+  return Array.from(document.querySelectorAll(SCROLL_TOP_CONTAINER_SELECTOR));
+};
+
+function ScrollToTopButton() {
+  const location = useLocation();
+  const [isVisible, setIsVisible] = useState(false);
+
+  const updateVisibility = useCallback(() => {
+    if (typeof window === "undefined") return;
+
+    const documentScrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+    const hasContainerScroll = getScrollTopContainers().some(
+      (container) => container.scrollTop > SCROLL_TO_TOP_THRESHOLD,
+    );
+    const nextIsVisible = documentScrollTop > SCROLL_TO_TOP_THRESHOLD || hasContainerScroll;
+
+    setIsVisible((currentIsVisible) =>
+      currentIsVisible === nextIsVisible ? currentIsVisible : nextIsVisible,
+    );
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const scrollContainers = getScrollTopContainers();
+    const animationFrameId = window.requestAnimationFrame(updateVisibility);
+
+    window.addEventListener("scroll", updateVisibility, { passive: true });
+    scrollContainers.forEach((container) =>
+      container.addEventListener("scroll", updateVisibility, { passive: true }),
+    );
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("scroll", updateVisibility);
+      scrollContainers.forEach((container) =>
+        container.removeEventListener("scroll", updateVisibility),
+      );
+    };
+  }, [location.pathname, updateVisibility]);
+
+  const handleScrollToTop = useCallback(() => {
+    if (typeof window === "undefined") return;
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    getScrollTopContainers().forEach((container) => {
+      container.scrollTo({ top: 0, behavior: "smooth" });
+    });
+    setIsVisible(false);
+  }, []);
+
+  return (
+    <button
+      type="button"
+      onClick={handleScrollToTop}
+      aria-hidden={!isVisible}
+      aria-label="Kembali ke atas"
+      tabIndex={isVisible ? 0 : -1}
+      title="Kembali ke atas"
+      className={`fixed bottom-24 right-4 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-xl shadow-slate-900/10 transition duration-200 hover:-translate-y-0.5 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 sm:right-6 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:shadow-black/30 dark:hover:bg-slate-800 dark:focus:ring-offset-slate-950 ${
+        isVisible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
+      }`}
+    >
+      <LuArrowUp className="h-5 w-5" aria-hidden="true" />
+    </button>
+  );
+}
+
 function HighlightedText({ className = "", query, text }) {
   const parts = useMemo(() => getHighlightParts(text, query), [query, text]);
 
@@ -680,19 +763,25 @@ function TemplateChatBox({
   const shouldRenderHtml = hasHtmlMarkup(filledTemplate);
 
   return (
-    <div className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex min-w-0 flex-col gap-3 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
-        <div className="min-w-0">
-          <p className="text-xs font-black uppercase text-indigo-600 dark:text-indigo-300">Template chat</p>
-          <p className="mt-1 min-w-0 break-words text-sm font-semibold text-slate-700 dark:text-slate-200">
+    <div className="min-w-0 overflow-hidden rounded-xl border border-indigo-300 bg-indigo-50/60 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-100 dark:border-indigo-400/50 dark:bg-indigo-500/10 dark:ring-indigo-400/10">
+      <div className="flex min-w-0 flex-col gap-3 border-b border-indigo-500/20 bg-indigo-600 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:bg-indigo-500/25">
+        <div className="flex min-w-0 gap-3">
+          <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white shadow-sm ring-1 ring-white/20">
+            <LuMessageSquare className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+          <p className="text-xs font-black uppercase text-indigo-50">Balasan Siap Kirim</p>
+          <p className="mt-1 min-w-0 break-words text-sm font-semibold text-white">
             <HighlightedText text={title || "Template chat"} query={searchQuery} />
           </p>
+          </div>
         </div>
         <button
           type="button"
           onClick={() => onCopy(copyText, stepId)}
-          className="w-full shrink-0 rounded-lg border border-slate-300 bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 sm:w-auto dark:border-slate-700 dark:bg-indigo-600 dark:hover:bg-indigo-500"
+          className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-white/40 bg-white px-3 py-2 text-sm font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-white/70 sm:w-auto dark:border-white/20 dark:bg-white dark:text-indigo-700 dark:hover:bg-indigo-50"
         >
+          <LuClipboard className="h-4 w-4" aria-hidden="true" />
           {isCopied ? "Tersalin" : "Copy"}
         </button>
       </div>
@@ -701,10 +790,10 @@ function TemplateChatBox({
           html={filledTemplate}
           highlightClassName={SEARCH_HIGHLIGHT_CLASS}
           highlightQuery={searchQuery}
-          className="min-w-0 overflow-x-auto px-4 py-4 text-sm leading-6 break-words [overflow-wrap:anywhere] prose-a:break-all prose-code:break-words prose-pre:max-w-full prose-pre:overflow-x-auto prose-ol:pl-5 prose-ul:pl-5 [&_*]:max-w-full [&_li]:min-w-0 [&_li]:break-words [&_ol]:max-w-full [&_ul]:max-w-full"
+          className="min-w-0 overflow-x-auto bg-white/90 px-4 py-4 text-sm leading-6 break-words [overflow-wrap:anywhere] prose-a:break-all prose-code:break-words prose-pre:max-w-full prose-pre:overflow-x-auto prose-ol:pl-5 prose-ul:pl-5 dark:bg-slate-900/80 [&_*]:max-w-full [&_li]:min-w-0 [&_li]:break-words [&_ol]:max-w-full [&_ul]:max-w-full"
         />
       ) : (
-        <p className="min-w-0 overflow-x-auto whitespace-pre-wrap px-4 py-4 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere] dark:text-slate-300">
+        <p className="min-w-0 overflow-x-auto whitespace-pre-wrap bg-white/90 px-4 py-4 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere] dark:bg-slate-900/80 dark:text-slate-300">
           <HighlightedText text={filledTemplate} query={searchQuery} />
         </p>
       )}
@@ -717,18 +806,25 @@ function InternalInstructionCard({ content, searchQuery, title }) {
 
   if (hasHandlingHtmlMarkup(content)) {
     return (
-      <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10">
-        <p className="text-xs font-black uppercase text-emerald-700 dark:text-emerald-200">Internal Instruction</p>
+      <div className="rounded-xl border border-sky-200 bg-sky-50/70 p-4 dark:border-sky-500/25 dark:bg-sky-500/10">
+        <div className="flex items-start gap-3">
+          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-200">
+            <LuCircleHelp className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+        <p className="text-xs font-black uppercase text-sky-700 dark:text-sky-200">Internal Instruction</p>
         {title && (
           <p className="mt-1 break-words text-sm font-bold text-slate-900 dark:text-white">
             <HighlightedText text={title} query={searchQuery} />
           </p>
         )}
+          </div>
+        </div>
         <SanitizedHtmlRenderer
           html={content}
           highlightClassName={SEARCH_HIGHLIGHT_CLASS}
           highlightQuery={searchQuery}
-          className="internal-instruction-content mt-3 min-w-0 overflow-x-auto text-sm leading-6 break-words [overflow-wrap:anywhere] prose-a:break-all prose-code:break-words prose-pre:max-w-full prose-pre:overflow-x-auto [&_*]:max-w-full [&_li]:min-w-0 [&_li]:break-words [&_ol]:max-w-full [&_ul]:max-w-full"
+          className="internal-instruction-content mt-3 min-w-0 overflow-x-auto text-sm leading-7 break-words [overflow-wrap:anywhere] prose-a:break-all prose-code:break-words prose-pre:max-w-full prose-pre:overflow-x-auto [&_*]:max-w-full [&_li]:min-w-0 [&_li]:max-w-[72ch] [&_li]:break-words [&_li]:leading-7 [&_ol]:max-w-full [&_p]:max-w-[72ch] [&_p]:leading-7 [&_ul]:max-w-full"
         />
       </div>
     );
@@ -737,21 +833,28 @@ function InternalInstructionCard({ content, searchQuery, title }) {
   const instructions = toTextList(content);
 
   return (
-    <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10">
-      <p className="text-xs font-black uppercase text-emerald-700 dark:text-emerald-200">Internal Instruction</p>
+    <div className="rounded-xl border border-sky-200 bg-sky-50/70 p-4 dark:border-sky-500/25 dark:bg-sky-500/10">
+      <div className="flex items-start gap-3">
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-200">
+          <LuCircleHelp className="h-4 w-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+      <p className="text-xs font-black uppercase text-sky-700 dark:text-sky-200">Internal Instruction</p>
       {title && (
         <p className="mt-1 break-words text-sm font-bold text-slate-900 dark:text-white">
           <HighlightedText text={title} query={searchQuery} />
         </p>
       )}
+        </div>
+      </div>
       <ul className="mt-3 space-y-2">
         {instructions.map((instruction, instructionIndex) => (
           <li
             key={`${instruction}-${instructionIndex}`}
-            className="flex gap-3 text-sm leading-6 text-slate-700 dark:text-slate-300"
+            className="flex gap-3 text-sm leading-7 text-slate-700 dark:text-slate-300"
           >
-            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-            <span>
+            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500" />
+            <span className="max-w-[72ch]">
               <HighlightedText text={instruction} query={searchQuery} />
             </span>
           </li>
@@ -765,13 +868,20 @@ function HandlingNoteCard({ content, searchQuery, title }) {
   if (!content) return null;
 
   return (
-    <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
-      <p className="text-xs font-black uppercase text-amber-700 dark:text-amber-200">Catatan</p>
+    <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+      <div className="flex items-start gap-3">
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-200">
+          <LuShield className="h-4 w-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+      <p className="text-xs font-black uppercase text-amber-700 dark:text-amber-200">Catatan Agent</p>
       {title && (
         <p className="mt-1 break-words text-sm font-bold text-amber-950 dark:text-amber-50">
           <HighlightedText text={title} query={searchQuery} />
         </p>
       )}
+        </div>
+      </div>
       {hasHandlingHtmlMarkup(content) ? (
         <SanitizedHtmlRenderer
           html={content}
@@ -823,15 +933,41 @@ function HandlingItemRenderer({
   return <InternalInstructionCard content={item.content} searchQuery={searchQuery} title={itemTitle} />;
 }
 
+const HANDLING_ITEM_SUMMARY_STYLES = {
+  [HANDLING_ITEM_TYPES.instruction]:
+    "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/25 dark:bg-sky-500/10 dark:text-sky-200",
+  [HANDLING_ITEM_TYPES.template]:
+    "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-200",
+  [HANDLING_ITEM_TYPES.note]:
+    "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200",
+};
+
+const HANDLING_ITEM_SUMMARY_LABELS = {
+  [HANDLING_ITEM_TYPES.instruction]: "Instruksi",
+  [HANDLING_ITEM_TYPES.template]: "Template",
+  [HANDLING_ITEM_TYPES.note]: "Catatan",
+};
+
+const getHandlingItemSummary = (items = []) =>
+  items.reduce((summary, item) => {
+    const type = normalizeHandlingItemType(item?.type);
+    return {
+      ...summary,
+      [type]: (summary[type] || 0) + 1,
+    };
+  }, {});
+
 function HandlingSection({
   copiedStepId,
   customerGreeting,
   customerName,
   isExpanded,
+  isLast,
   onCopy,
   onToggle,
   searchQuery,
   step,
+  stepIndex,
 }) {
   const items = step.items.length
     ? step.items
@@ -853,44 +989,84 @@ function HandlingSection({
             ]
           : []),
       ];
+  const itemSummary = getHandlingItemSummary(items);
+  const summaryTypes = [
+    HANDLING_ITEM_TYPES.instruction,
+    HANDLING_ITEM_TYPES.template,
+    HANDLING_ITEM_TYPES.note,
+  ].filter((type) => itemSummary[type] > 0);
 
   return (
-    <section className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800"
-      >
-        <div className="min-w-0">
-          <h3 className="text-base font-black text-slate-950 dark:text-white">
-            <HighlightedText text={step.title} query={searchQuery} />
-          </h3>
-          <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
-            {items.length} item penanganan
-          </p>
+    <div className="relative flex gap-3 sm:gap-5">
+      <div className="relative flex w-10 shrink-0 justify-center sm:w-12">
+        {!isLast && (
+          <span className="absolute top-11 bottom-[-1.75rem] w-px bg-slate-200/60 dark:bg-slate-800/60" aria-hidden="true" />
+        )}
+        <div className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-4 border-slate-50 bg-indigo-600 text-sm font-black text-white shadow-sm ring-1 ring-indigo-200 dark:border-slate-950 dark:ring-indigo-500/40">
+          {stepIndex + 1}
         </div>
-        <span className="shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs font-bold text-slate-600 dark:border-slate-700 dark:text-slate-300">
-          {isExpanded ? "Tutup" : "Buka"}
-        </span>
-      </button>
+      </div>
 
-      {isExpanded && (
-        <div className="space-y-4 border-t border-slate-200 p-4 dark:border-slate-800">
-          {items.map((item, index) => (
-            <HandlingItemRenderer
-              key={`${step.id}-${item.id || index}`}
-              copiedStepId={copiedStepId}
-              customerGreeting={customerGreeting}
-              customerName={customerName}
-              item={item}
-              onCopy={onCopy}
-              searchQuery={searchQuery}
-              step={step}
-            />
-          ))}
-        </div>
-      )}
-    </section>
+      <section className="min-w-0 flex-1 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm transition dark:border-slate-800/70 dark:bg-slate-900">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex w-full items-start justify-between gap-4 border-b border-slate-200/70 bg-white px-4 py-4 text-left transition hover:bg-slate-50 dark:border-slate-800/70 dark:bg-slate-900 dark:hover:bg-slate-800/70"
+        >
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase text-indigo-600 dark:text-indigo-300">
+              Langkah {stepIndex + 1}
+            </p>
+            <h3 className="mt-1 text-base font-black leading-snug text-slate-950 dark:text-white">
+              <HighlightedText text={step.title} query={searchQuery} />
+            </h3>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {summaryTypes.map((type) => (
+                <span
+                  key={type}
+                  className={`rounded-full border px-2.5 py-1 text-xs font-bold ${HANDLING_ITEM_SUMMARY_STYLES[type]}`}
+                >
+                  {itemSummary[type]} {HANDLING_ITEM_SUMMARY_LABELS[type]}
+                </span>
+              ))}
+            </div>
+          </div>
+          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition dark:border-slate-700 dark:text-slate-300">
+            <svg
+              className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </span>
+        </button>
+
+        {isExpanded && (
+          <div className="bg-slate-50/70 p-4 dark:bg-slate-950/40">
+            <div className="space-y-4">
+              {items.map((item, index) => (
+                <HandlingItemRenderer
+                  key={`${step.id}-${item.id || index}`}
+                  copiedStepId={copiedStepId}
+                  customerGreeting={customerGreeting}
+                  customerName={customerName}
+                  item={item}
+                  onCopy={onCopy}
+                  searchQuery={searchQuery}
+                  step={step}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
 
@@ -926,12 +1102,13 @@ function DetailActionMenu({ isDeleting, onEdit, onRequestDelete }) {
   };
 
   return (
-    <div className="flex shrink-0 items-center gap-2">
+    <div className="flex shrink-0 items-center gap-2 pt-1 lg:pr-2">
       <button
         type="button"
         onClick={onEdit}
-        className="inline-flex h-10 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
       >
+        <LuPencil className="h-4 w-4" aria-hidden="true" />
         Edit
       </button>
 
@@ -1040,7 +1217,10 @@ function SopWorkspace({
         <div className="space-y-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
-              <p className="text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">{category}</p>
+              <p className="inline-flex items-center gap-2 text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">
+                <LuFileText className="h-4 w-4 text-indigo-500 dark:text-indigo-300" aria-hidden="true" />
+                {category}
+              </p>
               <h1 className="mt-2 text-2xl font-black leading-tight text-slate-950 sm:text-3xl dark:text-white">
                 <HighlightedText text={article?.title || "Tanpa judul SOP"} query={searchQuery} />
               </h1>
@@ -1089,8 +1269,9 @@ function SopWorkspace({
               type="button"
               onClick={onCopyCustomerName}
               disabled={!customerName.trim()}
-              className="inline-flex h-[42px] items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-4 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50 sm:self-end dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/20"
+              className="inline-flex h-[42px] items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50 sm:self-end dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/20"
             >
+              <LuClipboard className="h-4 w-4" aria-hidden="true" />
               Copy Nama User
             </button>
 
@@ -1116,7 +1297,10 @@ function SopWorkspace({
             className="mb-4 border-l-4 pl-4"
             style={{ borderLeftColor: accentColor }}
           >
-            <h2 className="text-lg font-bold text-slate-950 dark:text-white">Kondisi</h2>
+            <h2 className="inline-flex items-center gap-2 text-lg font-bold text-slate-950 dark:text-white">
+              <LuCircleHelp className="h-5 w-5 text-indigo-500 dark:text-indigo-300" aria-hidden="true" />
+              Kondisi
+            </h2>
           </div>
 
           {conditions.length > 0 ? (
@@ -1138,11 +1322,19 @@ function SopWorkspace({
         </section>
 
         <section className="border-b border-slate-200 py-6 dark:border-slate-800">
-          <h2 className="mb-6 text-lg font-bold text-slate-950 dark:text-white">Penanganan</h2>
+          <div className="mb-6">
+            <h2 className="inline-flex items-center gap-2 text-lg font-bold text-slate-950 dark:text-white">
+              <LuWorkflow className="h-5 w-5 text-indigo-500 dark:text-indigo-300" aria-hidden="true" />
+              Penanganan
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
+              Ikuti urutan berikut sebagai workflow saat membantu customer.
+            </p>
+          </div>
 
           {handlingSteps.length > 0 ? (
-            <div className="space-y-4">
-              {handlingSteps.map((step) => (
+            <div className="space-y-7">
+              {handlingSteps.map((step, index) => (
                 <HandlingSection
                   key={step.id}
                   step={step}
@@ -1150,9 +1342,11 @@ function SopWorkspace({
                   customerGreeting={customerGreeting}
                   customerName={customerName}
                   isExpanded={expandedHandlingIds.has(step.id)}
+                  isLast={index === handlingSteps.length - 1}
                   onCopy={(template, stepId) => onCopyTemplate(template, stepId, sopId)}
                   onToggle={() => toggleHandling(step.id)}
                   searchQuery={searchQuery}
+                  stepIndex={index}
                 />
               ))}
             </div>
@@ -1163,8 +1357,11 @@ function SopWorkspace({
           )}
         </section>
 
-        <section className="mt-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-4 text-amber-950 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
-          <h2 className="text-base font-bold">Catatan / Warning</h2>
+        <section className="mt-6 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-4 text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+          <h2 className="inline-flex items-center gap-2 text-base font-bold">
+            <LuShield className="h-5 w-5" aria-hidden="true" />
+            Catatan Agent
+          </h2>
           {warningContent.warningsHtml ? (
             <SanitizedHtmlRenderer
               html={warningContent.warningsHtml}
@@ -1903,7 +2100,6 @@ function HomePage() {
   const [customerGreeting, setCustomerGreeting] = useState("");
   const [copiedStepId, setCopiedStepId] = useState("");
   const [deleteTargetArticle, setDeleteTargetArticle] = useState(null);
-  const [frequentlyUsedSops, setFrequentlyUsedSops] = useState([]);
   const [isDeletingArticle, setIsDeletingArticle] = useState(false);
   const [sopMode, setSopMode] = useState("detail");
   const searchInputRef = useRef(null);
@@ -1916,6 +2112,15 @@ function HomePage() {
   const articles = useMemo(
     () => (Array.isArray(loadedArticles) ? loadedArticles : []),
     [loadedArticles],
+  );
+  const frequentlyUsedSopsQuery = useQuery({
+    queryKey: queryKeys.sopUsage.frequentlyUsed(),
+    queryFn: sopUsageService.getFrequentlyUsed,
+    enabled: !isAuthLoading && isAuthenticated,
+  });
+  const frequentlyUsedSops = useMemo(
+    () => (Array.isArray(frequentlyUsedSopsQuery.data) ? frequentlyUsedSopsQuery.data : []),
+    [frequentlyUsedSopsQuery.data],
   );
   const frequentlyUsedCountMap = useMemo(() => {
     const countMap = new Map();
@@ -1998,47 +2203,6 @@ function HomePage() {
     [articles, handleSelectArticle, showToast],
   );
 
-  const loadFrequentlyUsedSops = useCallback(async () => {
-    if (!isAuthenticated) {
-      setFrequentlyUsedSops([]);
-      return;
-    }
-
-    try {
-      const frequentlyUsedData = await sopUsageService.getFrequentlyUsed();
-      setFrequentlyUsedSops(frequentlyUsedData);
-    } catch (error) {
-      console.warn("Gagal memuat urutan SOP populer.", error);
-      setFrequentlyUsedSops([]);
-    }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    let isActive = true;
-
-    if (!isAuthenticated) {
-      return undefined;
-    }
-
-    sopUsageService
-      .getFrequentlyUsed()
-      .then((frequentlyUsedData) => {
-        if (isActive) {
-          setFrequentlyUsedSops(frequentlyUsedData);
-        }
-      })
-      .catch((error) => {
-        if (isActive) {
-          console.warn("Gagal memuat urutan SOP populer.", error);
-          setFrequentlyUsedSops([]);
-        }
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [isAuthenticated]);
-
   useEffect(() => {
     const handleShortcut = (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
@@ -2114,7 +2278,11 @@ function HomePage() {
       showToast("Template chat berhasil disalin.", "success");
       sopUsageService
         .logCopy(idSop)
-        .then(() => loadFrequentlyUsedSops())
+        .then(() => {
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.sopUsage.frequentlyUsed(),
+          });
+        })
         .catch((error) => {
           console.warn("Gagal mencatat copy SOP.", error);
         });
@@ -2191,7 +2359,7 @@ function HomePage() {
       }
       setDeleteTargetArticle(null);
       showToast(ARTICLE_MESSAGES.deleteSuccess, "success");
-      await queryClient.invalidateQueries({ queryKey: ["articles"] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
     } catch (error) {
       showToast(error?.message || ARTICLE_MESSAGES.deleteFailed, "error");
     } finally {
@@ -2207,7 +2375,10 @@ function HomePage() {
   return (
     <>
       <main className="min-h-[calc(100vh-4rem)] bg-slate-100 text-slate-950 lg:grid lg:grid-cols-[minmax(20rem,35%)_minmax(0,65%)] dark:bg-slate-950 dark:text-white">
-        <aside className="border-r border-slate-200 bg-white lg:h-[calc(100vh-4rem)] lg:overflow-y-auto dark:border-slate-800 dark:bg-slate-950">
+        <aside
+          data-scroll-top-container
+          className="border-r border-slate-200 bg-white lg:h-[calc(100vh-4rem)] lg:overflow-y-auto dark:border-slate-800 dark:bg-slate-950"
+        >
           <div className="sticky top-16 z-10 border-b border-slate-200 bg-white p-4 sm:p-5 lg:top-0 dark:border-slate-800 dark:bg-slate-950">
           <label className="block">
             <span className="sr-only">Ctrl + K</span>
@@ -2265,7 +2436,7 @@ function HomePage() {
           </div>
         </aside>
 
-        <section className="lg:h-[calc(100vh-4rem)] lg:overflow-y-auto">
+        <section data-scroll-top-container className="lg:h-[calc(100vh-4rem)] lg:overflow-y-auto">
         {isAuthenticated && !shouldShowArticleLoading && !shouldShowArticleError && (
           <SopModeTabs
             canShowDetailSop={userIsSuperAdmin}
@@ -2461,6 +2632,7 @@ function App() {
         <Route path="/cek-me" element={<CekMe />} />
         <Route path="/links" element={<ImportantLinksPage />} />
       </Routes>
+      <ScrollToTopButton />
     </BrowserRouter>
   );
 }

@@ -314,8 +314,7 @@ export default function EditPage() {
                 onChange={(value) => handleDetailsChange("Catatan", value)}
                 placeholder={DEFAULT_CATATAN}
                 label="Catatan Template"
-                defaultMaxDepth={3}
-                helperText="Gunakan list dan tombol indent/outdent untuk membuat catatan bertingkat hingga 3 level."
+                helperText="Bisa copy-paste dari dokumen lain tanpa perlu merapikan ulang format."
               />
             </div>
 

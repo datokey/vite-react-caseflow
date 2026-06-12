@@ -264,11 +264,10 @@ export default function HandlingBuilder({
                               : "Tulis instruksi internal untuk agen."
                           }
                           label={HANDLING_ITEM_LABELS[type]}
-                          defaultMaxDepth={type === HANDLING_ITEM_TYPES.note ? 3 : 2}
                           helperText={
                             type === HANDLING_ITEM_TYPES.note
                               ? "Catatan ditampilkan berbeda di halaman detail SOP."
-                              : "Gunakan list dan tombol indent/outdent untuk membuat instruksi bertingkat."
+                              : "Bisa copy-paste dari dokumen lain; format list, tabel, warna, dan style teks akan dipertahankan sebisa mungkin."
                           }
                         />
                       )}

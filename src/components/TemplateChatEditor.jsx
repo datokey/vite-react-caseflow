@@ -1,6 +1,5 @@
 import { useRef } from "react";
-import ReactQuill from "react-quill-new";
-import "react-quill-new/dist/quill.snow.css";
+import TinyMCEEditor from "./editor/TinyMCEEditor";
 
 const AVAILABLE_VARIABLES = [
   { name: "nama_pelanggan", display: "Nama Pelanggan" },
@@ -9,22 +8,6 @@ const AVAILABLE_VARIABLES = [
   { name: "sapaan", display: "Sapaan (Bapak/Ibu)" },
   { name: "produk", display: "Produk" },
   { name: "status", display: "Status" },
-];
-
-const QUILL_MODULES = {
-  toolbar: [
-    ["bold", "italic", "underline"],
-    [{ list: "ordered" }, { list: "bullet" }],
-    ["blockquote", "clean"],
-  ],
-};
-
-const QUILL_FORMATS = [
-  "bold",
-  "blockquote",
-  "italic",
-  "list",
-  "underline",
 ];
 
 export default function TemplateChatEditor({
@@ -43,23 +26,18 @@ export default function TemplateChatEditor({
   const safeValue = value || "";
 
   const insertVariable = (variable) => {
-    const editor = editorRef.current?.getEditor?.();
+    const editor = editorRef.current;
     const variableText = `{{${variable}}}`;
 
     if (!editor) {
       onChange(`${safeValue}${variableText}`);
-      onCloseVariableMenu(id);
+      onCloseVariableMenu?.(id);
       return;
     }
 
     editor.focus();
-
-    const range = editor.getSelection(true);
-    const insertIndex = range?.index ?? Math.max(editor.getLength() - 1, 0);
-
-    editor.insertText(insertIndex, variableText, "user");
-    editor.setSelection(insertIndex + variableText.length, 0, "silent");
-    onCloseVariableMenu(id);
+    editor.insertContent(variableText);
+    onCloseVariableMenu?.(id);
   };
 
   return (
@@ -101,16 +79,17 @@ export default function TemplateChatEditor({
         )}
       </div>
 
-      <ReactQuill
+      <TinyMCEEditor
         id={id}
-        ref={editorRef}
-        theme="snow"
         value={safeValue}
         onChange={onChange}
-        modules={QUILL_MODULES}
-        formats={QUILL_FORMATS}
+        onEditorReady={(editor) => {
+          editorRef.current = editor;
+        }}
         placeholder={placeholder}
         className="template-chat-editor"
+        height={210}
+        toolbar="undo redo | bold italic underline | bullist numlist | blockquote removeformat | code"
       />
 
       <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
